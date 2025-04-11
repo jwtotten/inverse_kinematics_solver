@@ -21,11 +21,21 @@ class IkSolver:
         :type z: float
         :return: List of angles [alpha, beta, gamma]
         """
+        if verbose:
+            print(f"Input coordinates: x={x}, y={y}, z={z}")
+        # Check if the coordinates are reachable
+        if sqrt(x**2 + y**2) > self.coxa_length + self.femur_length + self.tibia_length:
+            raise ValueError("Coordinates are unreachable")
+
         # Calculate required lengths
         l1 = sqrt(x**2 + y**2)
-        l = sqrt(self.z_offset**2 - (l1-self.coxa_length)**2)
+        l = sqrt(self.z_offset**2 + (l1-self.coxa_length)**2)
         if verbose:
             print(f"l1: {l1}, l: {l}")
+            
+        # Check if the coordinates are reachable
+        if l > self.femur_length + self.tibia_length:
+            raise ValueError("Coordinates are unreachable")
 
         # Calculate gamma
         gamma = atan2(y, x)
@@ -36,7 +46,7 @@ class IkSolver:
         alpha1 = acos(self.z_offset/l)
         if verbose:
             print(f"alpha1: {alpha1}")
-        alpha2 = acos((l**2 + self.femur_length**2 - self.tibia_length**2)/(2*l*self.tibia_length))
+        alpha2 = acos((-l**2 - self.femur_length**2 + self.tibia_length**2)/(-2*l*self.tibia_length))
         if verbose:
             print(f"alpha2: {alpha2}")
         alpha  = alpha1 + alpha2
@@ -57,7 +67,7 @@ if __name__ == "__main__":
     coxa_length: float = 1.0
     femur_length: float = 1.0
     tibia_length: float = 1.0
-    z_offset: float = 2.0
+    z_offset: float = 1.9
 
     # Example usage
     x: float = 0.5
