@@ -2,6 +2,7 @@
 
 import numpy as np
 from math import atan2, sqrt, acos
+from matplotlib import pyplot as plt
 
 class IkSolver:
     def __init__(self, coxa_length, femur_length, tibia_length, z_offset=0):
@@ -32,7 +33,7 @@ class IkSolver:
         l = sqrt(self.z_offset**2 + (l1-self.coxa_length)**2)
         if verbose:
             print(f"l1: {l1}, l: {l}")
-            
+
         # Check if the coordinates are reachable
         if l > self.femur_length + self.tibia_length:
             raise ValueError("Coordinates are unreachable")
@@ -77,3 +78,15 @@ if __name__ == "__main__":
     ik_solver = IkSolver(coxa_length, femur_length, tibia_length, z_offset)
     angles = ik_solver.solve_angles(x, y, z, verbose=True)
     print(f"Angles: {angles}")
+
+
+    # Plotting the angles
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.set_xlabel('X axis')
+    ax.set_ylabel('Y axis')
+    ax.set_zlabel('Z axis')
+    ax.set_title('Inverse Kinematics Angles')
+    ax.scatter(x, y, z, c='r', marker='o')
+    ax.text(x, y, z, f'Angles: {angles}', size=10, zorder=1)
+    plt.show()
