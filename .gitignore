@@ -1,3 +1,5 @@
 # VSCode specific files
 .vscode/
 *.code-workspace
+
+venv/
