@@ -44,10 +44,10 @@ class IkSolver:
             print(f"gamma: {gamma}")
 
         # Calculate alpha
-        alpha1 = acos(self.z_offset/l)
+        alpha1 = -acos(self.z_offset/l)
         if verbose:
             print(f"alpha1: {alpha1}")
-        alpha2 = acos((-l**2 - self.femur_length**2 + self.tibia_length**2)/(-2*l*self.tibia_length))
+        alpha2 = -acos((-l**2 - self.femur_length**2 + self.tibia_length**2)/(-2*l*self.tibia_length))
         if verbose:
             print(f"alpha2: {alpha2}")
         alpha  = alpha1 + alpha2
@@ -101,7 +101,7 @@ if __name__ == "__main__":
     z_offset: float = 2
 
     # Example usage
-    x: float = 1.0
+    x: float = 2.0
     y: float = 1.5
     z: float = 0.0
 
