@@ -22,6 +22,9 @@ class IkSolver:
         :type z: float
         :return: List of angles [alpha, beta, gamma]
         """
+
+        # ToDo: update the equations to return all four possible solutions.
+
         if verbose:
             print(f"Input coordinates: x={x}, y={y}, z={z}")
         # Check if the coordinates are reachable
@@ -60,6 +63,16 @@ class IkSolver:
             print(f"beta: {beta}")
 
         return [alpha, beta, gamma] 
+
+    def apply_boundary_conditions(self, angles: list) -> list:
+        """
+        Apply the boundary conditions of the robot to the possible solutions of the inverse 
+        kinematics.
+        :param angles: List of angles [alpha, beta, gamma]
+        :type angles: list
+        :return: List of angles after applying the boundary conditions
+        """
+        raise NotImplementedError("Boundary conditions are not implemented yet")
 
     def get_leg_positions(self, angles: list) -> dict:
         """
