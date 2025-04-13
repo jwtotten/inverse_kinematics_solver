@@ -1,7 +1,7 @@
 # This file is for solving the inverse kinematics of a hexapod robot.
 
 import numpy as np
-from math import atan2, sqrt, acos
+from math import atan2, sqrt, acos, sin, cos
 from matplotlib import pyplot as plt
 
 class IkSolver:
@@ -10,59 +10,67 @@ class IkSolver:
         self.femur_length = femur_length
         self.tibia_length = tibia_length
         self.z_offset = z_offset
-    
-    def solve_angles(self, x:float, y:float, z:float, verbose:bool = False) -> list:
+
+    def rik2(self, x:float, y:float, l1:float, l2:float, verbose:bool = False):
         """
-        Solves the angles required to move the leg to the given coordinate (x, y, z).
+        This function calculates the rik2 for a given x and y.
+        :param x: X coordinate
+        :type x: float
+        :param y: Y coordinate
+        :type y: float
+        :return: List of angles [[q11, q21], [q21, q22]]
+        """
+
+        xd = sqrt((x**2 + y**2))
+
+        c2 = (xd**2-l1**2-l2**2)/(2*l1*l2)
+
+        if verbose:
+            print(f"xd: {xd}, c2: {c2}")
+        if abs(c2) > 1:
+            raise ValueError("Coordinates are unreachable")
+        elif c2 == 1:
+            if verbose:
+                print("Coordinates are reachable")  
+            return [atan2(y, x), 0]
+        elif c2 == -1:
+            if verbose:
+                print("Coordinates are reachable")
+            return [atan2(y, x), np.pi]
+        else:
+            q21 = acos(c2)
+            q22 = -acos(c2)
+            theta = atan2(y, x)
+            q11 = theta - atan2(l2*sin(q21), l1+l2*cos(q21))
+            q12 = theta - atan2(l2*sin(q22), l1+l2*cos(q22))
+
+        return [[q11, q21], [q12, q22]]
+    
+    def rik3(self, x:float, y:float, z:float, verbose:bool = False):
+        """
+        This function calculates the rik2 and the for a given z, calculates all 4 solutions for the rik3.
         :param x: X coordinate
         :type x: float
         :param y: Y coordinate
         :type y: float
         :param z: Z coordinate
         :type z: float
-        :return: List of angles [alpha, beta, gamma]
+        :return: List of angles [[q11, q21], [q21, q22]]
         """
 
-        # ToDo: update the equations to return all four possible solutions.
+        l1 = self.coxa_length
+        l2 = self.femur_length
+        l3 = self.tibia_length
 
-        if verbose:
-            print(f"Input coordinates: x={x}, y={y}, z={z}")
-        # Check if the coordinates are reachable
-        if sqrt(x**2 + y**2) > self.coxa_length + self.femur_length + self.tibia_length:
-            raise ValueError("Coordinates are unreachable")
+        xrot = sqrt(x**2 + y**2)
+        yrot = -z + l1
 
-        # Calculate required lengths
-        l1 = sqrt(x**2 + y**2)
-        l = sqrt(self.z_offset**2 + (l1-self.coxa_length)**2)
-        if verbose:
-            print(f"l1: {l1}, l: {l}")
+        [[q11, q21], [q12, q22]] = self.rik2(xrot, yrot, l2, l3, verbose)
+        q31 = atan2(yrot, xrot)
+        [[q11_1, q21_1], [q12_1, q22_1]] = self.rik2(-xrot, yrot, l2, l3, verbose)
+        q32 = atan2(yrot, xrot)
 
-        # Check if the coordinates are reachable
-        if l > self.femur_length + self.tibia_length:
-            raise ValueError("Coordinates are unreachable")
-
-        # Calculate gamma
-        gamma = atan2(y, x)
-        if verbose:
-            print(f"gamma: {gamma}")
-
-        # Calculate alpha
-        alpha1 = -acos(self.z_offset/l)
-        if verbose:
-            print(f"alpha1: {alpha1}")
-        alpha2 = -acos((-l**2 - self.femur_length**2 + self.tibia_length**2)/(-2*l*self.tibia_length))
-        if verbose:
-            print(f"alpha2: {alpha2}")
-        alpha  = alpha1 + alpha2
-        if verbose:
-            print(f"alpha: {alpha}")
-
-        # Calculate beta
-        beta = acos((self.femur_length**2 + self.tibia_length**2 - l**2)/(2*self.femur_length*self.tibia_length))
-        if verbose:
-            print(f"beta: {beta}")
-
-        return [alpha, beta, gamma] 
+        return [[q11, q21, q31], [q12, q22, q31], [q11_1, q21_1, q32], [q12_1, q22_1, q32]]
 
     def apply_boundary_conditions(self, angles: list) -> list:
         """
@@ -113,58 +121,60 @@ if __name__ == "__main__":
     tibia_length: float = 5.0
     z_offset: float = 2
 
-    # Example usage
-    x: float = 2.0
-    y: float = 1.5
-    z: float = 0.0
-
+    #example usage of rik3
+    x = 2.0
+    y = 1.5
+    z = 0.0
     ik_solver = IkSolver(coxa_length, femur_length, tibia_length, z_offset)
-    angles = ik_solver.solve_angles(x, y, z, verbose=True)
-    print(f"Angles: {angles}")
-    print('')
+    all_angles = ik_solver.rik3(x, y, z, verbose=True)
+    print(f"Angles: {all_angles}")
+    print(" ")
 
-    # Get leg positions
-    leg_positions = ik_solver.get_leg_positions(angles)
-    print(f"Leg positions: {leg_positions}")
-    # Extracting the coordinates for plotting
-    coxa_pos = leg_positions["coxa"]
-    femur_pos = leg_positions["femur"]
-    tibia_pos = leg_positions["tibia"]
-    x = [coxa_pos[0], femur_pos[0], tibia_pos[0]]
-    y = [coxa_pos[1], femur_pos[1], tibia_pos[1]]
-    z = [coxa_pos[2], femur_pos[2], tibia_pos[2]]
-    print(f"x: {x},\ny: {y},\nz: {z}")
+    for index, angles in enumerate(all_angles):
 
-    # Plotting the leg positions
-    fig = plt.figure()
-    ax_1 = fig.add_subplot(221)
-    ax_1.set_xlabel('X axis')
-    ax_1.set_ylabel('Y axis')
-    ax_1.set_title('Leg Positions')
-    ax_1.scatter(x, y, c='r', marker='o')
-    ax_1.plot(x, y, c='b')
-    ax_1.text(x[2], y[2], 'Tibia', size=10, zorder=1)
-    ax_1.text(x[0], y[0], 'Coxa', size=10, zorder=1)
-    ax_1.text(x[1], y[1], 'Femur', size=10, zorder=1)
+        # Get leg positions
+        leg_positions = ik_solver.get_leg_positions(angles)
+        print(f"Leg positions: {leg_positions}")
+        # Extracting the coordinates for plotting
+        coxa_pos = leg_positions["coxa"]
+        femur_pos = leg_positions["femur"]
+        tibia_pos = leg_positions["tibia"]
+        x = [coxa_pos[0], femur_pos[0], tibia_pos[0]]
+        y = [coxa_pos[1], femur_pos[1], tibia_pos[1]]
+        z = [coxa_pos[2], femur_pos[2], tibia_pos[2]]
+        print(f"x: {x},\ny: {y},\nz: {z}")
 
-    ax_2 = fig.add_subplot(222)
-    ax_2.set_xlabel('X axis')
-    ax_2.set_ylabel('Z axis')
-    ax_2.set_title('Leg Positions')
-    ax_2.scatter(x, z, c='r', marker='o')
-    ax_2.plot(x, z, c='b')
-    ax_2.text(x[2], z[2], 'Tibia', size=10, zorder=1)
-    ax_2.text(x[0], z[0], 'Coxa', size=10, zorder=1)
-    ax_2.text(x[1], z[1], 'Femur', size=10, zorder=1)
+        # Plotting the leg positions
+        fig = plt.figure(index)
+        ax_1 = fig.add_subplot(221)
+        ax_1.set_xlabel('X axis')
+        ax_1.set_ylabel('Y axis')
+        ax_1.set_title('Leg Positions')
+        ax_1.scatter(x, y, c='r', marker='o')
+        ax_1.plot(x, y, c='b')
+        ax_1.text(x[2], y[2], 'Tibia', size=10, zorder=1)
+        ax_1.text(x[0], y[0], 'Coxa', size=10, zorder=1)
+        ax_1.text(x[1], y[1], 'Femur', size=10, zorder=1)
 
-    ax_3 = fig.add_subplot(212, projection='3d')
-    ax_3.set_xlabel('X axis')
-    ax_3.set_ylabel('Y axis')
-    ax_3.set_zlabel('Z axis')
-    ax_3.set_title('Leg Positions')
-    ax_3.scatter(x, y, z, c='r', marker='o')
-    ax_3.plot(x, y, z, c='b')
-    ax_3.text(x[2], y[2], z[2], 'Tibia', size=10, zorder=1)
-    ax_3.text(x[0], y[0], z[0], 'Coxa', size=10, zorder=1)
-    ax_3.text(x[1], y[1], z[1], 'Femur', size=10, zorder=1)
+        ax_2 = fig.add_subplot(222)
+        ax_2.set_xlabel('X axis')
+        ax_2.set_ylabel('Z axis')
+        ax_2.set_title('Leg Positions')
+        ax_2.scatter(x, z, c='r', marker='o')
+        ax_2.plot(x, z, c='b')
+        ax_2.text(x[2], z[2], 'Tibia', size=10, zorder=1)
+        ax_2.text(x[0], z[0], 'Coxa', size=10, zorder=1)
+        ax_2.text(x[1], z[1], 'Femur', size=10, zorder=1)
+
+        ax_3 = fig.add_subplot(212, projection='3d')
+        ax_3.set_xlabel('X axis')
+        ax_3.set_ylabel('Y axis')
+        ax_3.set_zlabel('Z axis')
+        ax_3.set_title('Leg Positions')
+        ax_3.scatter(x, y, z, c='r', marker='o')
+        ax_3.plot(x, y, z, c='b')
+        ax_3.text(x[2], y[2], z[2], 'Tibia', size=10, zorder=1)
+        ax_3.text(x[0], y[0], z[0], 'Coxa', size=10, zorder=1)
+        ax_3.text(x[1], y[1], z[1], 'Femur', size=10, zorder=1)
+    
     plt.show()
