@@ -11,17 +11,17 @@ class IkSolver:
         self.tibia_length = tibia_length
         self.z_offset = z_offset
 
-    def rik2(self, x:float, y:float, l1:float, l2:float, verbose:bool = False):
+    def rik2(self, x:float, z:float, l1:float, l2:float, verbose:bool = False):
         """
         This function calculates the rik2 for a given x and y.
         :param x: X coordinate
         :type x: float
-        :param y: Y coordinate
-        :type y: float
+        :param z: Z coordinate
+        :type z: float
         :return: List of angles [[q11, q21], [q21, q22]]
         """
 
-        xd = sqrt((x**2 + y**2))
+        xd = sqrt((x**2 + z**2))
 
         c2 = (xd**2-l1**2-l2**2)/(2*l1*l2)
 
@@ -40,7 +40,7 @@ class IkSolver:
         else:
             q21 = acos(c2)
             q22 = -acos(c2)
-            theta = atan2(y, x)
+            theta = atan2(z, x)
             q11 = theta - atan2(l2*sin(q21), l1+l2*cos(q21))
             q12 = theta - atan2(l2*sin(q22), l1+l2*cos(q22))
 
@@ -62,13 +62,13 @@ class IkSolver:
         l2 = self.femur_length
         l3 = self.tibia_length
 
-        xrot = sqrt(x**2 + y**2)
-        yrot = -z + l1
+        xrot = sqrt(x**2 + z**2)
+        zrot = -y + l1
 
-        [[q11, q21], [q12, q22]] = self.rik2(xrot, yrot, l2, l3, verbose)
-        q31 = atan2(yrot, xrot)
-        [[q11_1, q21_1], [q12_1, q22_1]] = self.rik2(-xrot, yrot, l2, l3, verbose)
-        q32 = atan2(yrot, xrot)
+        [[q11, q21], [q12, q22]] = self.rik2(xrot, zrot, l2, l3, verbose)
+        q31 = atan2(y, xrot)
+        [[q11_1, q21_1], [q12_1, q22_1]] = self.rik2(-xrot, zrot, l2, l3, verbose)
+        q32 = atan2(y, xrot)
 
         return [[q11, q21, q31], [q12, q22, q31], [q11_1, q21_1, q32], [q12_1, q22_1, q32]]
 
@@ -92,19 +92,19 @@ class IkSolver:
         alpha, beta, gamma = angles
 
         # Coxa position
-        coxa_x = self.coxa_length * np.cos(gamma)
-        coxa_y = self.coxa_length * np.sin(gamma)
-        coxa_z = 0
+        coxa_x = self.coxa_length * cos(gamma)
+        coxa_y = self.coxa_length * sin(gamma)
+        coxa_z = self.z_offset
 
         # Femur position
-        femur_x = coxa_x + self.femur_length * np.cos(alpha) * np.cos(gamma)
-        femur_y = coxa_y + self.femur_length * np.cos(alpha) * np.sin(gamma)
-        femur_z = self.femur_length * np.sin(alpha)
+        femur_x = coxa_x + self.femur_length * cos(alpha) * cos(gamma)
+        femur_y = coxa_y + self.femur_length * cos(alpha) * sin(gamma)
+        femur_z = self.femur_length * sin(alpha)
 
         # Tibia position (end effector)
-        tibia_x = femur_x + self.tibia_length * np.cos(alpha + beta) * np.cos(gamma)
-        tibia_y = femur_y + self.tibia_length * np.cos(alpha + beta) * np.sin(gamma)
-        tibia_z = femur_z + self.tibia_length * np.sin(alpha + beta)
+        tibia_x = femur_x + self.tibia_length * cos(alpha + beta) * cos(gamma)
+        tibia_y = femur_y + self.tibia_length * cos(alpha + beta) * sin(gamma)
+        tibia_z = femur_z + self.tibia_length * sin(alpha + beta)
 
         return {
             "coxa": (coxa_x, coxa_y, coxa_z),
@@ -117,14 +117,14 @@ if __name__ == "__main__":
 
     # Example parameters
     coxa_length: float = 1.0
-    femur_length: float = 3.0
-    tibia_length: float = 5.0
+    femur_length: float = 3.5
+    tibia_length: float = 7.0
     z_offset: float = 2
 
     #example usage of rik3
     x = 2.0
     y = 1.5
-    z = 0.0
+    z = 3.0
     ik_solver = IkSolver(coxa_length, femur_length, tibia_length, z_offset)
     all_angles = ik_solver.rik3(x, y, z, verbose=True)
     print(f"Angles: {all_angles}")
