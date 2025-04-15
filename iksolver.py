@@ -91,9 +91,9 @@ class IkSolver:
         """
         alpha, beta, gamma = angles
 
-        # Coxa position
-        coxa_x = self.coxa_length * cos(gamma)
-        coxa_y = self.coxa_length * sin(gamma)
+        # Coxa position - should be pinned to the XY origin and adjusted by the z height.
+        coxa_x = 0.0
+        coxa_y = 0.0
         coxa_z = self.z_offset
 
         # Femur position
