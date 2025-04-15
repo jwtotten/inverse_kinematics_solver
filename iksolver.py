@@ -97,9 +97,9 @@ class IkSolver:
         coxa_z = self.z_offset
 
         # Femur position
-        femur_x = coxa_x + self.femur_length * cos(alpha) * cos(gamma)
-        femur_y = coxa_y + self.femur_length * cos(alpha) * sin(gamma)
-        femur_z = self.femur_length * sin(alpha)
+        femur_x = self.coxa_length * cos(alpha)
+        femur_y = self.coxa_length * sin(alpha)
+        femur_z = self.femur_length * sin(beta) + self.z_offset
 
         # Tibia position (end effector)
         tibia_x = femur_x + self.tibia_length * cos(alpha + beta) * cos(gamma)
@@ -123,8 +123,8 @@ if __name__ == "__main__":
 
     #example usage of rik3
     x = 2.0
-    y = 1.5
-    z = 3.0
+    y = 0.0
+    z = 5.0
     ik_solver = IkSolver(coxa_length, femur_length, tibia_length, z_offset)
     all_angles = ik_solver.rik3(x, y, z, verbose=True)
     print(f"Angles: {all_angles}")
