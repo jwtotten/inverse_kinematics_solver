@@ -62,13 +62,13 @@ class IkSolver:
         l2 = self.femur_length
         l3 = self.tibia_length
 
-        xrot = sqrt(x**2 + z**2)
-        zrot = -y + l1
+        xrot = sqrt(x**2 + y**2)
+        zrot = self.z_offset
 
         [[q11, q21], [q12, q22]] = self.rik2(xrot, zrot, l2, l3, verbose)
         q31 = atan2(y, xrot)
         [[q11_1, q21_1], [q12_1, q22_1]] = self.rik2(-xrot, zrot, l2, l3, verbose)
-        q32 = atan2(y, xrot)
+        q32 = -atan2(y, xrot)
 
         return [[q11, q21, q31], [q12, q22, q31], [q11_1, q21_1, q32], [q12_1, q22_1, q32]]
 
@@ -82,6 +82,36 @@ class IkSolver:
         """
         raise NotImplementedError("Boundary conditions are not implemented yet")
 
+    def forward_kinematics(self, angles: list) -> dict:
+        """
+        Calculates the x, y, and z coordinates of each segment of a 3-part end effector using forward kinematics.
+        :param angles: List of angles [alpha, beta, gamma]
+        :type angles: list
+        :return: Dictionary with coordinates of coxa, femur, and tibia joints
+        """
+        alpha, beta, gamma = angles
+
+        # Coxa position
+        coxa_x = self.coxa_length * cos(alpha)
+        coxa_y = self.coxa_length * sin(alpha)
+        coxa_z = self.z_offset
+
+        # Femur position
+        femur_x = coxa_x + self.femur_length * cos(alpha + beta)
+        femur_y = coxa_y + self.femur_length * sin(alpha + beta)
+        femur_z = coxa_z
+
+        # Tibia position (end effector)
+        tibia_x = femur_x + self.tibia_length * cos(alpha + beta + gamma)
+        tibia_y = femur_y + self.tibia_length * sin(alpha + beta + gamma)
+        tibia_z = femur_z
+
+        return {
+            "coxa": (coxa_x, coxa_y, coxa_z),
+            "femur": (femur_x, femur_y, femur_z),
+            "tibia": (tibia_x, tibia_y, tibia_z)
+        }
+    
     def get_leg_positions(self, angles: list) -> dict:
         """
         Calculates the coordinates of the coxa, femur, and tibia joints based on the given angles.
@@ -92,8 +122,8 @@ class IkSolver:
         alpha, beta, gamma = angles
 
         # Coxa position - should be pinned to the XY origin and adjusted by the z height.
-        coxa_x = 0.0
-        coxa_y = 0.0
+        coxa_x = self.coxa_length * cos(alpha)
+        coxa_y = self.coxa_length * sin(alpha)
         coxa_z = self.z_offset
 
         # Femur position
@@ -122,9 +152,9 @@ if __name__ == "__main__":
     z_offset: float = 2
 
     #example usage of rik3
-    x = 2.0
-    y = 0.0
-    z = 5.0
+    x = 2.5
+    y = 2.0
+    z = 2.0
     ik_solver = IkSolver(coxa_length, femur_length, tibia_length, z_offset)
     all_angles = ik_solver.rik3(x, y, z, verbose=True)
     print(f"Angles: {all_angles}")
@@ -133,7 +163,7 @@ if __name__ == "__main__":
     for index, angles in enumerate(all_angles):
 
         # Get leg positions
-        leg_positions = ik_solver.get_leg_positions(angles)
+        leg_positions = ik_solver.forward_kinematics(angles)
         print(f"Leg positions: {leg_positions}")
         # Extracting the coordinates for plotting
         coxa_pos = leg_positions["coxa"]
@@ -155,6 +185,9 @@ if __name__ == "__main__":
         ax_1.text(x[2], y[2], 'Tibia', size=10, zorder=1)
         ax_1.text(x[0], y[0], 'Coxa', size=10, zorder=1)
         ax_1.text(x[1], y[1], 'Femur', size=10, zorder=1)
+        # plot the body of the robot
+        ax_1.axhline(y=0, xmin=0, xmax=1, c='g')
+        ax_1.axvline(x=0, ymin=0, ymax=1, c='g')
 
         ax_2 = fig.add_subplot(222)
         ax_2.set_xlabel('X axis')
@@ -165,6 +198,9 @@ if __name__ == "__main__":
         ax_2.text(x[2], z[2], 'Tibia', size=10, zorder=1)
         ax_2.text(x[0], z[0], 'Coxa', size=10, zorder=1)
         ax_2.text(x[1], z[1], 'Femur', size=10, zorder=1)
+        # plot the body of the robot
+        ax_2.axhline(y=0, xmin=0, xmax=1, c='g')
+        ax_2.axvline(x=0, ymin=0, ymax=1, c='g')
 
         ax_3 = fig.add_subplot(212, projection='3d')
         ax_3.set_xlabel('X axis')
@@ -173,8 +209,19 @@ if __name__ == "__main__":
         ax_3.set_title('Leg Positions')
         ax_3.scatter(x, y, z, c='r', marker='o')
         ax_3.plot(x, y, z, c='b')
-        ax_3.text(x[2], y[2], z[2], 'Tibia', size=10, zorder=1)
-        ax_3.text(x[0], y[0], z[0], 'Coxa', size=10, zorder=1)
-        ax_3.text(x[1], y[1], z[1], 'Femur', size=10, zorder=1)
-    
+        ax_3.plot([0, x[0]], [0, y[0]], [z_offset, z_offset], c='b')
+        
+        # plot the body of the robot
+        ax_3.plot([-1, 1], [0, 0], [z_offset-1, z_offset-1], c='g')
+        ax_3.plot([0, 0], [-1, 1], [z_offset-1, z_offset-1], c='g')
+        ax_3.plot([0, 0], [0, 0], [z_offset-1, z_offset+1], c='g')
+        ax_3.plot([-1, 1], [0, 0], [z_offset+1, z_offset+1], c='g')
+        ax_3.plot([0, 0], [-1, 1], [z_offset+1, z_offset+1], c='g')
+
+        ax_3.scatter(0, 0, z_offset, c='r', marker='o')
+        ax_3.text(x[2], y[2], z[2], 'End Effector', size=10, zorder=1)
+        ax_3.text(x[0], y[0], z[0], 'Femur', size=10, zorder=1)
+        ax_3.text(x[1], y[1], z[1], 'Tibia', size=10, zorder=1)
+        ax_3.text(0, 0, z_offset, 'Coxa', size=10, zorder=1)
+
     plt.show()
