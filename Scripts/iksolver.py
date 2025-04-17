@@ -1,6 +1,5 @@
 import numpy as np
 from math import atan2, sqrt, acos, sin, cos
-from matplotlib import pyplot as plt
 
 class IkSolver:
     def __init__(self, coxa_length, femur_length, tibia_length, z_offset=0):
@@ -49,4 +48,3 @@ if __name__ == "__main__":
     q1, q2, q3 = angles[0][0], angles[1][0], angles[1][1]
     coordinates = ik_solver.solve_forward_kinematics(q1, q2, q3)
     print(f"Forward Kinematics Coordinates: {coordinates}")
-    
