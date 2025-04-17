@@ -3,3 +3,5 @@
 *.code-workspace
 
 venv/
+
+Scripts/__pycache__/
