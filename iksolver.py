@@ -212,11 +212,11 @@ if __name__ == "__main__":
         ax_3.plot([0, x[0]], [0, y[0]], [z_offset, z_offset], c='b')
         
         # plot the body of the robot
-        ax_3.plot([-1, 1], [0, 0], [z_offset-1, z_offset-1], c='g')
-        ax_3.plot([0, 0], [-1, 1], [z_offset-1, z_offset-1], c='g')
+        ax_3.plot([-1, 0], [0, 0], [z_offset-1, z_offset-1], c='g')
+        ax_3.plot([0, 0], [-1, 0], [z_offset-1, z_offset-1], c='g')
         ax_3.plot([0, 0], [0, 0], [z_offset-1, z_offset+1], c='g')
-        ax_3.plot([-1, 1], [0, 0], [z_offset+1, z_offset+1], c='g')
-        ax_3.plot([0, 0], [-1, 1], [z_offset+1, z_offset+1], c='g')
+        ax_3.plot([-1, 0], [0, 0], [z_offset+1, z_offset+1], c='g')
+        ax_3.plot([0, 0], [-1, 0], [z_offset+1, z_offset+1], c='g')
 
         ax_3.scatter(0, 0, z_offset, c='r', marker='o')
         ax_3.text(x[2], y[2], z[2], 'End Effector', size=10, zorder=1)
