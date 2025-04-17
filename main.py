@@ -27,5 +27,7 @@ if __name__ == "__main__":
           f"\n{coordinates[1]}"
           f"\n{coordinates[2]}")
     # Assuming plotter has a method to plot the 2D solution
-    # plotter = Plotter()
-    # plotter.plot_2d_solution(solution)  # Replace with actual method call
+    plotter = Plotter()
+    plotter.plot_2d_projection(coordinates)  # Replace with actual method call
+    plotter.show_all_plots()  # Show all plots
+
