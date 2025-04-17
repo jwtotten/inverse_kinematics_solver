@@ -32,7 +32,7 @@ class IkSolver:
         return [j1, j2, j3]
 
 
-    def solve_forward_kinematics(q1, q2, q3) -> list:
+    def solve_forward_kinematics(self, q1, q2, q3) -> list:
         """
         This function solves the forward kinematic equations for an end effector with 3
         degrees of freedom.
@@ -45,7 +45,18 @@ class IkSolver:
         :type q3: float
         :return: List of coordinates [x, y, z]
         """
-        raise NotImplementedError("This function is not implemented yet.")
+        
+        x1 = self.coxa_length * cos(q1)
+        y1 = self.coxa_length * sin(q1)
+        z1 = 0
+        x2 = x1 + self.femur_length * cos(q1) * cos(q2)
+        y2 = y1 + self.femur_length * sin(q1) * cos(q2)
+        z2 = self.femur_length * sin(q2)
+        x3 = x2 + self.tibia_length * cos(q1) * cos(q2 + q3)
+        y3 = y2 + self.tibia_length * sin(q1) * cos(q2 + q3)
+        z3 = z2 + self.tibia_length * sin(q2 + q3)
+
+        return [[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]]
     
 if __name__ == "__main__":
     # Example usage
