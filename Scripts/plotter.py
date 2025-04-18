@@ -1,4 +1,5 @@
 from matplotlib import pyplot as plt
+import matplotlib.animation as animation
 
 class Plotter:
 
@@ -47,6 +48,37 @@ class Plotter:
         # plot the body of the robot
         ax_2.axhline(y=0, xmin=0, xmax=1, c='g')
         ax_2.axvline(x=0, ymin=0, ymax=1, c='g')
+
+        self.plot_index += 1
+    
+    def plot_animated_3d_projection(self, forward_kinematics_result: list) -> None:
+        """
+        Plot the 3D solution of the inverse kinematics.
+        :param forward_kinematics_result: The result of the forward kinematics
+        :type forward_kinematics_result: list
+        :return: None
+        """
+        # Extracting the coordinates from the forward kinematics result
+        x = [forward_kinematics_result[0][0], forward_kinematics_result[1][0], forward_kinematics_result[2][0]]
+        y = [forward_kinematics_result[0][1], forward_kinematics_result[1][1], forward_kinematics_result[2][1]]
+        z = [forward_kinematics_result[0][2], forward_kinematics_result[1][2], forward_kinematics_result[2][2]]
+
+        # Plotting the leg positions
+        fig = plt.figure(self.plot_index)
+        ax = fig.add_subplot()
+
+        # Setting the Axes properties
+        ax.set(xlabel='X')
+        ax.set(ylabel='Y')
+        ax.set(zlabel='Z')
+        
+        ani = animation.FuncAnimation(fig, lambda i: ax.scatter(x, y, z, c='r', marker='o'), frames=10, interval=1000)
+        ax.set_title('Leg Positions')
+        ax.text(x[2], y[2], z[2], 'Tibia', size=10, zorder=1)
+        ax.text(x[0], y[0], z[0], 'Coxa', size=10, zorder=1)
+        ax.text(x[1], y[1], z[1], 'Femur', size=10, zorder=1)
+
+        raise NotImplementedError("3D animation is not implemented yet.")
 
         self.plot_index += 1
 

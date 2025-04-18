@@ -24,8 +24,13 @@ if __name__ == "__main__":
           f"\n{coordinates[0]}"
           f"\n{coordinates[1]}"
           f"\n{coordinates[2]}")
-    # Assuming plotter has a method to plot the 2D solution
+    
+    # Plot the 2D projection of the solution
     plotter = Plotter()
     plotter.plot_2d_projection(coordinates)  # Replace with actual method call
+    plotter.show_all_plots()  # Show all plots
+
+    # Plot an animated 3D projection of the solution
+    plotter.plot_animated_3d_projection(coordinates)  # Replace with actual method call
     plotter.show_all_plots()  # Show all plots
 
