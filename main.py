@@ -3,18 +3,16 @@ from Scripts.plotter import Plotter
 
 if __name__ == "__main__":
 
-    coxa_length = 1.0
     femur_length = 3.5
     tibia_length = 3.5
 
     # Example usage
-    ik = IkSolver(coxa_length=coxa_length, 
-                  femur_length=femur_length, 
+    ik = IkSolver(femur_length=femur_length, 
                   tibia_length=tibia_length)
     
     x=1.0
     y=1.0
-    z=1.0
+    z=3.0
 
     # Assuming iksolver has a method to get the 2D solution
     solution = ik.solve_inverse_kinematics(x, y, z)  # Replace with actual method call

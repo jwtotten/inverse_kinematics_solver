@@ -2,11 +2,29 @@ import numpy as np
 from math import atan2, sqrt, acos, sin, cos
 
 class IkSolver:
-    def __init__(self, coxa_length, femur_length, tibia_length, z_offset=0):
-        self.coxa_length = coxa_length
+    def __init__(self, femur_length, tibia_length) -> None:
+        """
+        This function initializes the inverse kinematic solver.
+        :param femur_length: Length of the femur
+        :type femur_length: float
+        :param tibia_length: Length of the tibia
+        :type tibia_length: float
+        :return: None
+        """
+        # Leg lengths
         self.femur_length = femur_length
         self.tibia_length = tibia_length
-        self.z_offset = z_offset
+        
+        # Leg offsets
+        self.x_offset = -5
+        self.y_offset = -2
+        self.z_offset = -6
+    
+    def __new__(cls, *args, **kwargs):
+
+        if not hasattr(cls, 'instance'):
+            cls.instance = super().__new__(cls)
+        return cls.instance
 
     def solve_inverse_kinematics(self, x, y, z) -> list:
         """
@@ -21,16 +39,36 @@ class IkSolver:
         :type z: float
         :return: List of angles [[q11, q21], [q21, q22]]
         """
-        j1 = atan2(y, x) * (180 / np.pi)
+        x, y, z = self.apply_offsets(x, y, z)
+
+        j1 = atan2(y, x)
         H = sqrt((y**2) + (x**2))
         L = sqrt((H**2) + (z**2))
-        j3 = acos(((self.femur_length**2) + (self.tibia_length**2) - (L**2)) / (2 * self.femur_length * self.tibia_length)) * (180 / np.pi)
-        b = acos(((L**2) + (self.femur_length**2) - (self.tibia_length**2)) / (2 * L * self.femur_length)) * (180 / np.pi)
-        a = atan2(z, H) * (180 / np.pi)
+        j3 = acos(((self.femur_length**2) + (self.tibia_length**2) - (L**2)) / (2 * self.femur_length * self.tibia_length))
+        b = acos(((L**2) + (self.femur_length**2) - (self.tibia_length**2)) / (2 * L * self.femur_length))
+        a = atan2(z, H)
         j2 = (b + a) 
 
         return [j1, j2, j3]
+    
+    def apply_offsets(self, x, y, z) -> list:
+        """
+        This function applies the offsets to the coordinates.
 
+        :param x: X coordinate
+        :type x: float
+        :param y: Y coordinate
+        :type y: float
+        :param z: Z coordinate
+        :type z: float
+        :return: List of coordinates [x, y, z]
+        """
+        # Apply offsets to the coordinates
+        x += self.x_offset
+        y += self.y_offset
+        z += self.z_offset
+
+        return [x, y, z]
 
     def solve_forward_kinematics(self, q1, q2, q3) -> list:
         """
@@ -46,15 +84,15 @@ class IkSolver:
         :return: List of coordinates [x, y, z]
         """
         
-        x1 = self.coxa_length * cos(q1)
-        y1 = self.coxa_length * sin(q1)
+        x1 = 0
+        y1 = 0
         z1 = 0
-        x2 = x1 + self.femur_length * cos(q1) * cos(q2)
-        y2 = y1 + self.femur_length * sin(q1) * cos(q2)
+        x2 = x1 - self.femur_length * cos(q1) * cos(q2)
+        y2 = y1 - self.femur_length * sin(q1) * cos(q2)
         z2 = self.femur_length * sin(q2)
-        x3 = x2 + self.tibia_length * cos(q1) * cos(q2 + q3)
-        y3 = y2 + self.tibia_length * sin(q1) * cos(q2 + q3)
-        z3 = z2 + self.tibia_length * sin(q2 + q3)
+        x3 = x2 - self.tibia_length * cos(q1) * cos(q2 + q3)
+        y3 = y2 - self.tibia_length * sin(q1) * cos(q2 + q3)
+        z3 = z2 - self.tibia_length * sin(q2 + q3)
 
         return [[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]]
     
