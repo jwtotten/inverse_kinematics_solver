@@ -55,7 +55,7 @@ class Plotter:
                                     x_positions: list,
                                     y_positions: list,
                                     z_positions: list, 
-                                    func) -> None:
+                                    ik_solver) -> None:
         """
         Plot the 2D solution of the inverse kinematics.
         :param x_positions: The x positions of the leg
@@ -64,8 +64,8 @@ class Plotter:
         :type y_positions: list
         :param z_positions: the z positions of the leg
         :type z_positions: list
-        :param func: The function that the pyplot animator should call
-        :type func: function
+        :param ik_solver: The class that the pyplot animator use to calculate the positions of the legs.
+        :type ik_solver: Class
         :return: None
         """
 
@@ -76,24 +76,40 @@ class Plotter:
         if not (x_positions and y_positions and z_positions):
             raise ValueError("The x, y and z positions must not be empty.")
         
+        coordinates = ik_solver.solve_leg_position_from_target_coordinates(x_positions[0], 
+                                                                           y_positions[0], 
+                                                                           z_positions[0], 
+                                                                           verbose=True)
+        # Extracting the coordinates from the forward kinematics result
+        x = [coordinates[0][0], coordinates[1][0], coordinates[2][0]]
+        y = [coordinates[0][1], coordinates[1][1], coordinates[2][1]]
+        z = [coordinates[0][2], coordinates[1][2], coordinates[2][2]]
+        
         # Plotting the leg positions
-        fig = plt.figure(self.plot_index)
-        ax = fig.add_subplot(121)
+        fig, (ax_1, ax_2) = plt.subplots(ncols=2, figsize=(10, 8))
 
-        ani = animation.FuncAnimation(ax, func(x_positions, y_positions, z_positions), frames=10, interval=1000)
-        ax.set_title('Leg Positions')
-        ax.text(x[2], y[2], 'Tibia', size=10, zorder=1)
-        ax.text(x[0], y[0], 'Coxa', size=10, zorder=1)
-        ax.text(x[1], y[1], 'Femur', size=10, zorder=1)
+        ax_1.set_title('Leg Positions')
+        ax_1.set_xlabel('X axis')
+        ax_1.set_ylabel('Y axis')
+        ax_1.set_title('Leg Positions')
+        ax_1.scatter(x, y, c='r', marker='o')
+        ax_1.plot(x, y, c='b')
+        ax_1.text(x[2], y[2], 'Tibia', size=10, zorder=1)
+        ax_1.text(x[0], y[0], 'Coxa', size=10, zorder=1)
+        ax_1.text(x[1], y[1], 'Femur', size=10, zorder=1)
 
-        ax_2 = fig.add_subplot(122)
-
-        ani = animation.FuncAnimation(ax_2, func(x_positions, z_positions, z_positions), frames=10, interval=1000)
         ax_2.set_title('Leg Positions')
+        ax_2.set_xlabel('X axis')
+        ax_2.set_ylabel('Z axis')
+        ax_2.set_title('Leg Positions')
+        ax_2.scatter(x, z, c='r', marker='o')
+        ax_2.plot(x, z, c='b')
         ax_2.text(x[2], z[2], 'Tibia', size=10, zorder=1)
         ax_2.text(x[0], z[0], 'Coxa', size=10, zorder=1)
         ax_2.text(x[1], z[1], 'Femur', size=10, zorder=1)
-
+        
+        # ani = animation.FuncAnimation(fig, ik_solver.solve_leg_position_from_target_coordinates(x_positions, y_positions, z_positions), frames=10, interval=1000)
+    
         self.plot_index += 1 
 
     
