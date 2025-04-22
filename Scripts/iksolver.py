@@ -69,6 +69,42 @@ class IkSolver:
         z += self.z_offset
 
         return [x, y, z]
+    
+    def solve_leg_position_from_target_coordinates(self, x:float, y:float, z:float, verbose:bool = False) -> list:
+        """
+        This fuction takes in the target coordinates and returns the leg position
+        in the form of a list of coordinates.
+        :param x: X coordinate  
+        :type x: float
+        :param y: Y coordinate
+        :type y: float
+        :param z: Z coordinate
+        :type z: float
+        :param verbose: If True, print the coordinates
+        :type verbose: bool
+        :return: List of coordinates [x, y, z]
+        """
+
+        if verbose:
+            print(f"Target Coordinates: "
+                f"\nX: {x}"
+                f"\nY: {y}"
+                f"\nZ: {z}")
+
+        solution = self.solve_inverse_kinematics(x, y, z)
+
+        if verbose:
+            print(f"Inverse Kinematics Solution: "
+                f"\n{solution}")
+            
+        q1, q2, q3 = solution[0], solution[1], solution[2]
+        coordinates = self.solve_forward_kinematics(q1, q2, q3)
+
+        if verbose:
+            print(f"Calculated leg coordinates:"
+                  f"\n{coordinates}")
+
+        return coordinates
 
     def solve_forward_kinematics(self, q1, q2, q3) -> list:
         """
