@@ -54,7 +54,7 @@ class Plotter:
     def plot_animated_2d_projection_xy(self, 
                                     x_positions: list,
                                     y_positions: list, 
-                                    func: function) -> None:
+                                    func) -> None:
         """
         Plot the 2D solution of the inverse kinematics.
         :param x_positions: The x positions of the leg
@@ -77,7 +77,7 @@ class Plotter:
         fig = plt.figure(self.plot_index)
         ax = fig.add_subplot(121)
 
-        ani = animation.FuncAnimation(fig, func(x_positions, y_positions, 0), frames=10, interval=1000)
+        ani = animation.FuncAnimation(ax, func(x_positions, y_positions, 0), frames=10, interval=1000)
         ax.set_title('Leg Positions')
         ax.text(x[2], y[2], 'Tibia', size=10, zorder=1)
         ax.text(x[0], y[0], 'Coxa', size=10, zorder=1)
