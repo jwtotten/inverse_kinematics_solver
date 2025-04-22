@@ -90,8 +90,8 @@ class IkSolver:
             raise ValueError("The length of the x, y and z positions must be equal.")
 
         target_coordinates = []
-        for i in range(len(x)):
-            
+        for i in range(len(x_list)):
+
             x = x_list[i]
             y = y_list[i]
             z = z_list[i]
