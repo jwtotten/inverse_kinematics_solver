@@ -16,9 +16,9 @@ class IkSolver:
         self.tibia_length = tibia_length
         
         # Leg offsets
-        self.x_offset = -5
-        self.y_offset = -2
-        self.z_offset = -6
+        self.x_offset: float = -5
+        self.y_offset:float = -2
+        self.z_offset: float = -6
     
     def __new__(cls, *args, **kwargs):
 
@@ -70,7 +70,7 @@ class IkSolver:
 
         return [x, y, z]
     
-    def solve_leg_position_from_target_coordinates(self, x_list:list, y_list:list, z_list:list, verbose:bool = False) -> list:
+    def solve_leg_position_from_target_coordinates(self, x: float, y: float, z: float, verbose:bool = False) -> list:
         """
         This fuction takes in the target coordinates and returns the leg position
         in the form of a list of coordinates.
@@ -85,39 +85,26 @@ class IkSolver:
         :return: List of coordinates [x, y, z]
         """
 
-        # Check that the lenght of the lists are equal
-        if not (len(x_list) == len(y_list) == len(z_list)):
-            raise ValueError("The length of the x, y and z positions must be equal.")
+        if verbose:
+            print(f"Target Coordinates: "
+                f"\nX: {x}"
+                f"\nY: {y}"
+                f"\nZ: {z}")
 
-        target_coordinates = []
-        for i in range(len(x_list)):
+        solution = self.solve_inverse_kinematics(x, y, z)
 
-            x = x_list[i]
-            y = y_list[i]
-            z = z_list[i]
-
-            if verbose:
-                print(f"Target Coordinates: "
-                    f"\nX: {x}"
-                    f"\nY: {y}"
-                    f"\nZ: {z}")
-
-            solution = self.solve_inverse_kinematics(x, y, z)
-
-            if verbose:
-                print(f"Inverse Kinematics Solution: "
-                    f"\n{solution}")
-                
-            q1, q2, q3 = solution[0], solution[1], solution[2]
-            coordinates = self.solve_forward_kinematics(q1, q2, q3)
-
-            if verbose:
-                print(f"Calculated leg coordinates:"
-                    f"\n{coordinates}")
-                
-            target_coordinates.append(coordinates)
+        if verbose:
+            print(f"Inverse Kinematics Solution: "
+                f"\n{solution}")
             
-        return target_coordinates
+        q1, q2, q3 = solution[0], solution[1], solution[2]
+        coordinates = self.solve_forward_kinematics(q1, q2, q3)
+
+        if verbose:
+            print(f"Calculated leg coordinates:"
+                f"\n{coordinates}")
+            
+        return coordinates
 
     def solve_forward_kinematics(self, q1, q2, q3) -> list:
         """
