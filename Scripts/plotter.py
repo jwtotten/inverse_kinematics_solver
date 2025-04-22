@@ -53,7 +53,8 @@ class Plotter:
 
     def plot_animated_2d_projection_xy(self, 
                                     x_positions: list,
-                                    y_positions: list, 
+                                    y_positions: list,
+                                    z_positions: list, 
                                     func) -> None:
         """
         Plot the 2D solution of the inverse kinematics.
@@ -61,27 +62,37 @@ class Plotter:
         :type x_positions: list
         :param y_positions: the y positions of the leg
         :type y_positions: list
+        :param z_positions: the z positions of the leg
+        :type z_positions: list
         :param func: The function that the pyplot animator should call
         :type func: function
         :return: None
         """
 
         # Check that the lenght of the lists are equal
-        if not (len(x_positions) == len(y_positions)):
+        if not (len(x_positions) == len(y_positions) == len(z_positions)):
             raise ValueError("The length of the x, y and z positions must be equal.")
         # Check that the lists are not empty
-        if not (x_positions and y_positions):
+        if not (x_positions and y_positions and z_positions):
             raise ValueError("The x, y and z positions must not be empty.")
         
         # Plotting the leg positions
         fig = plt.figure(self.plot_index)
         ax = fig.add_subplot(121)
 
-        ani = animation.FuncAnimation(ax, func(x_positions, y_positions, 0), frames=10, interval=1000)
+        ani = animation.FuncAnimation(ax, func(x_positions, y_positions, z_positions), frames=10, interval=1000)
         ax.set_title('Leg Positions')
         ax.text(x[2], y[2], 'Tibia', size=10, zorder=1)
         ax.text(x[0], y[0], 'Coxa', size=10, zorder=1)
         ax.text(x[1], y[1], 'Femur', size=10, zorder=1)
+
+        ax_2 = fig.add_subplot(122)
+
+        ani = animation.FuncAnimation(ax_2, func(x_positions, z_positions, z_positions), frames=10, interval=1000)
+        ax_2.set_title('Leg Positions')
+        ax_2.text(x[2], z[2], 'Tibia', size=10, zorder=1)
+        ax_2.text(x[0], z[0], 'Coxa', size=10, zorder=1)
+        ax_2.text(x[1], z[1], 'Femur', size=10, zorder=1)
 
         self.plot_index += 1 
 
