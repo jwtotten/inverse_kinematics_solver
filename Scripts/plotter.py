@@ -50,6 +50,41 @@ class Plotter:
         ax_2.axvline(x=0, ymin=0, ymax=1, c='g')
 
         self.plot_index += 1
+
+    def plot_animated_2d_projection_xy(self, 
+                                    x_positions: list,
+                                    y_positions: list, 
+                                    func: function) -> None:
+        """
+        Plot the 2D solution of the inverse kinematics.
+        :param x_positions: The x positions of the leg
+        :type x_positions: list
+        :param y_positions: the y positions of the leg
+        :type y_positions: list
+        :param func: The function that the pyplot animator should call
+        :type func: function
+        :return: None
+        """
+
+        # Check that the lenght of the lists are equal
+        if not (len(x_positions) == len(y_positions)):
+            raise ValueError("The length of the x, y and z positions must be equal.")
+        # Check that the lists are not empty
+        if not (x_positions and y_positions):
+            raise ValueError("The x, y and z positions must not be empty.")
+        
+        # Plotting the leg positions
+        fig = plt.figure(self.plot_index)
+        ax = fig.add_subplot(121)
+
+        ani = animation.FuncAnimation(fig, func(x_positions, y_positions, 0), frames=10, interval=1000)
+        ax.set_title('Leg Positions')
+        ax.text(x[2], y[2], 'Tibia', size=10, zorder=1)
+        ax.text(x[0], y[0], 'Coxa', size=10, zorder=1)
+        ax.text(x[1], y[1], 'Femur', size=10, zorder=1)
+
+        self.plot_index += 1 
+
     
     def plot_animated_3d_projection(self, forward_kinematics_result: list) -> None:
         """
