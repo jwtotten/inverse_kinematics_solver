@@ -32,13 +32,10 @@ if __name__ == "__main__":
 
     # Plot an animated 2D projection of the solution
     x_targets = [1.0, 1.1, 1.2, 1.3, 1.2, 1.1, 1.0]
-    y_targets = [1.0, 1.1, 1.2, 1.3, 1.2, 1.1, 1.0]
+    y_targets = [1.2, 1.3, 1.4, 1.5, 1.4, 1.3, 1.2]
     z_targets = [3.5, 3.6, 3.7, 3.8, 3.7, 3.6, 3.5]
-    coordinates = ik.solve_leg_position_from_target_coordinates(x_targets, 
-                                                                y_targets, 
-                                                                z_targets)
-    func = ik.solve_leg_position_from_target_coordinates
-    plotter.plot_animated_2d_projection_xy(coordinates[0], coordinates[1], coordinates[2], func=func)
+
+    plotter.plot_animated_2d_projection_xy(x_targets, y_targets, z_targets, ik_solver = ik)
     plotter.show_all_plots()
 
 
