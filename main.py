@@ -11,11 +11,11 @@ if __name__ == "__main__":
                   tibia_length=tibia_length)
     
     x=1.0
-    y=1.0
-    z=3.0
+    y=1.2
+    z=3.5
 
     # Assuming iksolver has a method to get the 2D solution
-    solution = ik.solve_inverse_kinematics(x, y, z)  # Replace with actual method call
+    solution = ik.solve_inverse_kinematics(x, y, z)
     print(f"Inverse Kinematics Solution: "
           f"\n{solution}")
     q1, q2, q3 = solution[0], solution[1], solution[2]
@@ -31,6 +31,6 @@ if __name__ == "__main__":
     plotter.show_all_plots()  # Show all plots
 
     # Plot an animated 3D projection of the solution
-    plotter.plot_animated_3d_projection(coordinates)  # Replace with actual method call
-    plotter.show_all_plots()  # Show all plots
+#     plotter.plot_animated_3d_projection(coordinates)  # Replace with actual method call
+#     plotter.show_all_plots()  # Show all plots
 
