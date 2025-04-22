@@ -70,27 +70,32 @@ class IkSolver:
 
         return [x, y, z]
     
-    def solve_leg_position_from_target_coordinates(self, x:list, y:list, z:list, verbose:bool = False) -> list:
+    def solve_leg_position_from_target_coordinates(self, x_list:list, y_list:list, z_list:list, verbose:bool = False) -> list:
         """
         This fuction takes in the target coordinates and returns the leg position
         in the form of a list of coordinates.
-        :param x: list of target X coordinate  
-        :type x: list
-        :param y: list of target Y coordinate
-        :type y: list
-        :param z: list of target Z coordinate
-        :type z: list
+        :param x_list: list of target X coordinate  
+        :type x_list: list
+        :param y_list: list of target Y coordinate
+        :type y_list: list
+        :param z_list: list of target Z coordinate
+        :type z_list: list
         :param verbose: If True, print the coordinates
         :type verbose: bool
         :return: List of coordinates [x, y, z]
         """
 
         # Check that the lenght of the lists are equal
-        if not (len(x) == len(y) == len(z)):
+        if not (len(x_list) == len(y_list) == len(z_list)):
             raise ValueError("The length of the x, y and z positions must be equal.")
 
         target_coordinates = []
         for i in range(len(x)):
+            
+            x = x_list[i]
+            y = y_list[i]
+            z = z_list[i]
+
             if verbose:
                 print(f"Target Coordinates: "
                     f"\nX: {x}"
