@@ -38,7 +38,7 @@ if __name__ == "__main__":
                                                                 y_targets, 
                                                                 z_targets)
     func = ik.solve_leg_position_from_target_coordinates
-    plotter.plot_animated_2d_projection_xy(coordinates[0], coordinates[1], func=func)
+    plotter.plot_animated_2d_projection_xy(coordinates[0], coordinates[1], coordinates[2], func=func)
     plotter.show_all_plots()
 
 
