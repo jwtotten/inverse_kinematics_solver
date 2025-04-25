@@ -36,6 +36,9 @@ if __name__ == "__main__":
     z_targets = [3.5, 3.6, 3.7, 3.8, 3.7, 3.6, 3.5]
 
     plotter.plot_animated_2d_projection_xy(x_targets, y_targets, z_targets, ik_solver = ik)
-    plotter.show_all_plots()
+    
+
+    # plot the animated 3d projection of the solution
+    plotter.plot_animated_3d_projection(x_targets, y_targets, z_targets, ik_solver = ik)
 
 
