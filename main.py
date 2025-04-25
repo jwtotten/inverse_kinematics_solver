@@ -31,9 +31,9 @@ if __name__ == "__main__":
     plotter.show_all_plots()  # Show all plots
 
     # Plot an animated 2D projection of the solution
-    x_targets = [1.0, 1.1, 1.2, 1.3, 1.2, 1.1, 1.0]
-    y_targets = [1.2, 1.3, 1.4, 1.5, 1.4, 1.3, 1.2]
-    z_targets = [3.5, 3.6, 3.7, 3.8, 3.7, 3.6, 3.5]
+    x_targets = [1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0]
+    y_targets = [1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2]
+    z_targets = [3.5, 3.6, 3.7, 3.8, 3.7, 3.6, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5]
 
     plotter.plot_animated_2d_projection_xy(x_targets, y_targets, z_targets, ik_solver = ik)
     
