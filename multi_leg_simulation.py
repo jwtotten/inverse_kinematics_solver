@@ -1,0 +1,51 @@
+from Scripts.iksolver import IkSolver
+from Scripts.plotter import Plotter
+
+if __name__ == "__main__":
+
+    # Leg 1
+    femur_length_1 = 3.5
+    tibia_length_1 = 3.5
+
+    # Leg 2
+    femur_length_2 = 3.5
+    tibia_length_2 = 3.5
+
+    # Leg 3
+    femur_length_3 = 3.5
+    tibia_length_3 = 3.5
+
+    # Leg 4
+    femur_length_4 = 3.5
+    tibia_length_4 = 3.5
+
+    # Leg 5
+    femur_length_5 = 3.5
+    tibia_length_5 = 3.5
+
+    # Leg 6
+    femur_length_6 = 3.5
+    tibia_length_6 = 3.5
+
+    # instantiate the inverse kinematic solver for each leg
+    ik_1 = IkSolver(femur_length=femur_length_1, 
+                  tibia_length=tibia_length_1)
+    
+    ik_2 = IkSolver(femur_length=femur_length_2, 
+                  tibia_length=tibia_length_2)
+    
+    ik_3 = IkSolver(femur_length=femur_length_3, 
+                  tibia_length=tibia_length_3)
+    
+    ik_4 = IkSolver(femur_length=femur_length_4, 
+                  tibia_length=tibia_length_4)
+    
+    ik_5 = IkSolver(femur_length=femur_length_5, 
+                  tibia_length=tibia_length_5)
+    
+    ik_6 = IkSolver(femur_length=femur_length_6, 
+                  tibia_length=tibia_length_6)
+    
+    x=1.0
+    y=1.2
+    z=3.5
