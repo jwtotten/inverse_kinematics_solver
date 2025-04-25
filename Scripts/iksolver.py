@@ -29,6 +29,15 @@ class IkSolver(object):
         instance = super().__new__(cls)
         cls._instances.append(instance)
         return instance
+    
+    def __repr__(self) -> str:
+        return_string: str = (f"{type(self).__name__}"
+                              f"(femur length={self.x}," 
+                              f"tibia length={self.y},"
+                              f"x offset={self.x_offset},"
+                              f"y offset={self.y_offset},"
+                              f"z offset={self.z_offset})")
+        return return_string
 
     def solve_inverse_kinematics(self, x, y, z) -> list:
         """
