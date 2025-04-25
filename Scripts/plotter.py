@@ -200,8 +200,8 @@ class Plotter:
             y = [coordinates[0][1], coordinates[1][1], coordinates[2][1]]
             z = [coordinates[0][2], coordinates[1][2], coordinates[2][2]]
 
-            joint_points_l.set_data(x, y, z)
-            left_plot.set_data(x, y, z)
+            joint_points_l.set_data_3d(x, y, z)
+            left_plot.set_data_3d(x, y, z)
             
             # t_t.set_position((x[2], y[2], z[2]))
             # c_t.set_position((x[0], y[0], y[0]))
