@@ -46,6 +46,13 @@ if __name__ == "__main__":
     ik_6 = IkSolver(femur_length=femur_length_6, 
                   tibia_length=tibia_length_6)
     
+    try:
+        ik_7 = IkSolver(femur_length=femur_length_6, 
+                  tibia_length=tibia_length_6)
+    except RuntimeError as e:
+        print(f"Too many instances of the leg solver have been instanciated.")
+        print(e)
+    
     x=1.0
     y=1.2
     z=3.5

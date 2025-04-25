@@ -1,7 +1,10 @@
 import numpy as np
 from math import atan2, sqrt, acos, sin, cos
 
-class IkSolver:
+class IkSolver(object):
+    _instances = []  # Keep track of instance reference
+    limit = 6
+
     def __init__(self, femur_length, tibia_length) -> None:
         """
         This function initializes the inverse kinematic solver.
@@ -21,10 +24,11 @@ class IkSolver:
         self.z_offset: float = -6
     
     def __new__(cls, *args, **kwargs):
-
-        if not hasattr(cls, 'instance'):
-            cls.instance = super().__new__(cls)
-        return cls.instance
+        if not len(cls._instances) < cls.limit:
+            raise RuntimeError("Count not create instance. Limit %s reached" % cls.limit)    
+        instance = super().__new__(cls)
+        cls._instances.append(instance)
+        return instance
 
     def solve_inverse_kinematics(self, x, y, z) -> list:
         """
