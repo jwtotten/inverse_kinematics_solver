@@ -93,43 +93,45 @@ class Plotter:
         ax_1.set_xlabel('X axis')
         ax_1.set_ylabel('Y axis')
         ax_1.set_title('Leg Positions')
-        ax_1.scatter(x, y, c='r', marker='o')
+        joint_points_l, = ax_1.plot(x, y, c='r', marker='o')
         left_plot, = ax_1.plot(x, y, c='b')
-        ax_1.text(x[2], y[2], 'Tibia', size=10, zorder=1)
-        ax_1.text(x[0], y[0], 'Coxa', size=10, zorder=1)
-        ax_1.text(x[1], y[1], 'Femur', size=10, zorder=1)
+        t_l_t = ax_1.text(x[2], y[2], 'Tibia', size=10, zorder=1)
+        c_l_t = ax_1.text(x[0], y[0], 'Coxa', size=10, zorder=1)
+        f_l_t = ax_1.text(x[1], y[1], 'Femur', size=10, zorder=1)
 
         ax_2.set_title('Leg Positions')
         ax_2.set_xlabel('X axis')
         ax_2.set_ylabel('Z axis')
         ax_2.set_title('Leg Positions')
-        ax_2.scatter(x, z, c='r', marker='o')
+        joint_points_r, = ax_2.plot(x, z, c='r', marker='o')
         right_plot, = ax_2.plot(x, z, c='b')
-        ax_2.text(x[2], z[2], 'Tibia', size=10, zorder=1)
-        ax_2.text(x[0], z[0], 'Coxa', size=10, zorder=1)
-        ax_2.text(x[1], z[1], 'Femur', size=10, zorder=1)
+        t_r_t = ax_2.text(x[2], z[2], 'Tibia', size=10, zorder=1)
+        c_r_t = ax_2.text(x[0], z[0], 'Coxa', size=10, zorder=1)
+        f_r_t = ax_2.text(x[1], z[1], 'Femur', size=10, zorder=1)
 
         def update_animated_plot(i):
             coordinates = ik_solver.solve_leg_position_from_target_coordinates(x_positions[i], 
                                                                            y_positions[i], 
                                                                            z_positions[i], 
-                                                                           verbose=True)
+                                                                           verbose=False)
             # Extracting the coordinates from the forward kinematics result
             x = [coordinates[0][0], coordinates[1][0], coordinates[2][0]]
             y = [coordinates[0][1], coordinates[1][1], coordinates[2][1]]
             z = [coordinates[0][2], coordinates[1][2], coordinates[2][2]]
 
-            ax_1.scatter(x, y, c='r', marker='o')
+            joint_points_l.set_data(x, y)
             left_plot.set_data(x, y)
-            ax_1.text(x[2], y[2], 'Tibia', size=10, zorder=1)
-            ax_1.text(x[0], y[0], 'Coxa', size=10, zorder=1)
-            ax_1.text(x[1], y[1], 'Femur', size=10, zorder=1)
+            
+            t_l_t.set_position((x[2], y[2]))
+            c_l_t.set_position((x[0], y[0]))
+            f_l_t.set_position((x[1], y[1]))
 
-            ax_2.scatter(x, z, c='r', marker='o')
+            joint_points_r.set_data(x, z)
             right_plot.set_data(x, z)
-            ax_2.text(x[2], z[2], 'Tibia', size=10, zorder=1)
-            ax_2.text(x[0], z[0], 'Coxa', size=10, zorder=1)
-            ax_2.text(x[1], z[1], 'Femur', size=10, zorder=1)
+
+            t_r_t.set_position((x[2], y[2]))
+            c_r_t.set_position((x[0], y[0]))
+            f_r_t.set_position((x[1], y[1]))
             
             return left_plot, right_plot
         
