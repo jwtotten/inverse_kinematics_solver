@@ -88,6 +88,34 @@ class IkSolver(object):
 
         return [x, y, z]
     
+    @property
+    def offets(self) -> list:
+        """
+        This function returns the offsets of the coordinates for the solution.
+
+        :return: List of offsets [x, y, z]
+        """
+        
+        return [self.x_offset, self.y_offset, self.z_offset]
+
+    @offets.setter
+    def offsets(self, x, y, z) -> None:
+        """
+        This function can set the offsets of the coordinates for the solution.
+
+        :param x: X coordinate
+        :type x: float
+        :param y: Y coordinate
+        :type y: float
+        :param z: Z coordinate
+        :type z: float
+        :return: None
+        """
+
+        self.x_offset = x
+        self.y_offset = y
+        self.z_offset = z
+    
     def solve_leg_position_from_target_coordinates(self, x: float, y: float, z: float, verbose:bool = False) -> list:
         """
         This fuction takes in the target coordinates and returns the leg position
