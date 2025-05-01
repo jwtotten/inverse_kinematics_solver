@@ -174,10 +174,26 @@ class Plotter:
         x = [coordinates[0][0], coordinates[1][0], coordinates[2][0]]
         y = [coordinates[0][1], coordinates[1][1], coordinates[2][1]]
         z = [coordinates[0][2], coordinates[1][2], coordinates[2][2]]
+
         
         # Plotting the leg positions
         fig= plt.figure(figsize=(10, 8))
         ax_1 = fig.add_subplot(111, projection='3d')
+
+        # plot the body of the robot
+        ax_1.plot([-3, 0], [0, 0], [1, 1], c='g')
+        ax_1.plot([0, 0], [-3, 0], [1, 1], c='g')
+        ax_1.plot([0, 0], [0,0], [-1, 1], c='g')
+        ax_1.plot([-3, 0], [0, 0], [-1, -1], c='g')
+        ax_1.plot([0, 0], [-3, 0], [-1, -1], c='g')
+        ax_1.plot([-3, -3], [0,0], [-1, 1], c='g')
+        ax_1.plot([0, 0], [-3,-3], [-1, 1], c='g')
+        ax_1.plot([-3, -3], [-3,-3], [-1, 1], c='g')
+        ax_1.plot([-3, -3],[-3, 0],[1, 1], c='g')
+        ax_1.plot([-3, 0],[-3, -3],[1, 1], c='g')
+        ax_1.plot([-3, -3],[-3, 0],[-1, -1], c='g')
+        ax_1.plot([-3, 0],[-3, -3],[-1, -1], c='g')
+
 
         ax_1.set_title('Leg Positions')
         ax_1.set_xlabel('X axis')
