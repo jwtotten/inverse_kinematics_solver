@@ -198,7 +198,7 @@ class Plotter:
         ax_1.set_title('Leg Positions')
         ax_1.set_xlabel('X axis')
         ax_1.set_ylabel('Y axis')
-        ax_1.set_ylabel('Z axis')
+        ax_1.set_zlabel('Z axis')
         ax_1.set_title('Leg Positions')
         joint_points_l, = ax_1.plot(x, y, z, c='r', marker='o')
         left_plot, = ax_1.plot(x, y, z, c='b')
