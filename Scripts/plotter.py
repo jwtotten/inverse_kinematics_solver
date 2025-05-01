@@ -180,16 +180,23 @@ class Plotter:
         fig= plt.figure(figsize=(10, 8))
         ax_1 = fig.add_subplot(111, projection='3d')
 
+        x_length = ik_solver.x_length
+        y_length = ik_solver.y_length
+        z_length = ik_solver.z_length
+
         # plot the body of the robot
-        ax_1.plot([-3, 0], [0, 0], [1, 1], c='g')
-        ax_1.plot([0, 0], [-3, 0], [1, 1], c='g')
-        ax_1.plot([0, 0], [0,0], [-1, 1], c='g')
+        ax_1.plot([-x_length/2, 0], [0, 0], [z_length/2, z_length/2], c='g')
+        ax_1.plot([0, 0], [-y_length/2, 0], [z_length/2, z_length/2], c='g')
+        ax_1.plot([0, 0], [0,0], [-z_length/2, z_length/2], c='g')
+
         ax_1.plot([-3, 0], [0, 0], [-1, -1], c='g')
         ax_1.plot([0, 0], [-3, 0], [-1, -1], c='g')
         ax_1.plot([-3, -3], [0,0], [-1, 1], c='g')
+
         ax_1.plot([0, 0], [-3,-3], [-1, 1], c='g')
         ax_1.plot([-3, -3], [-3,-3], [-1, 1], c='g')
         ax_1.plot([-3, -3],[-3, 0],[1, 1], c='g')
+        
         ax_1.plot([-3, 0],[-3, -3],[1, 1], c='g')
         ax_1.plot([-3, -3],[-3, 0],[-1, -1], c='g')
         ax_1.plot([-3, 0],[-3, -3],[-1, -1], c='g')
