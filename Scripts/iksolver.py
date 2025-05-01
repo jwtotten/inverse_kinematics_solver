@@ -22,6 +22,11 @@ class IkSolver(object):
         self.x_offset: float = -5
         self.y_offset:float = -2
         self.z_offset: float = -6
+
+        # Body lengths
+        self.x_length: float = 5
+        self.y_length: float = 3
+        self.z_length: float = 1
     
     def __new__(cls, *args, **kwargs):
         if not len(cls._instances) < cls.limit:
