@@ -64,7 +64,7 @@ if __name__ == "__main__":
 
     # plot the animated 3d projection of the solution
     plotter = Plotter()
-    plotter.plot_animated_3d_projection(x_targets, y_targets, z_targets, ik_solver = ik_1)
+    plotter.plot_animated_3d_projection(ik_solver = ik_1)
 
 
     # plot the animated 3d projection of the solution
@@ -74,4 +74,4 @@ if __name__ == "__main__":
     print(f"Leg 4: {ik_4}")
     print(f"Leg 5: {ik_5}")
     print(f"Leg 6: {ik_6}")
-    plotter.plot_animated_3d_projection(x_targets, y_targets, z_targets, ik_solver = [ik_1, ik_2, ik_3, ik_4, ik_5, ik_6])
+    plotter.plot_animated_3d_projection(ik_solver = [ik_1, ik_2, ik_3, ik_4, ik_5, ik_6])
