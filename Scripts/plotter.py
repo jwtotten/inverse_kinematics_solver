@@ -141,10 +141,7 @@ class Plotter:
         self.plot_index += 1 
 
     
-    def plot_animated_3d_projection(self, 
-                                    x_positions: list,
-                                    y_positions: list,
-                                    z_positions: list, 
+    def plot_animated_3d_projection(self,
                                     ik_solver: Union[object, list]) -> None:
         """
         Plot the 3D solution of the inverse kinematics.
@@ -158,13 +155,6 @@ class Plotter:
         :type ik_solver: Class
         :return: None
         """
-
-        # Check that the lenght of the lists are equal
-        if not (len(x_positions) == len(y_positions) == len(z_positions)):
-            raise ValueError("The length of the x, y and z positions must be equal.")
-        # Check that the lists are not empty
-        if not (x_positions and y_positions and z_positions):
-            raise ValueError("The x, y and z positions must not be empty.")
         
         # Plotting the leg positions
         fig= plt.figure(figsize=(10, 8))
@@ -208,6 +198,7 @@ class Plotter:
 
         if isinstance(ik_solver, list):
             for leg in ik_solver:
+                x_positions, y_positions, z_positions = leg.motion
                 coordinates = leg.solve_leg_position_from_target_coordinates(x_positions[0], 
                                                                             y_positions[0], 
                                                                             z_positions[0], 
@@ -223,6 +214,7 @@ class Plotter:
                 leg_plots.append(left_plot,)
 
         else:
+            x_positions, y_positions, z_positions = ik_solver.motion
             coordinates = ik_solver.solve_leg_position_from_target_coordinates(x_positions[0], 
                                                                             y_positions[0], 
                                                                             z_positions[0], 
@@ -241,6 +233,7 @@ class Plotter:
             # ToDo: Adjust this function to work with multiple legs
             if isinstance(ik_solver, list):
                 for idx, leg in enumerate(ik_solver):
+                    x_positions, y_positions, z_positions = leg.motion
                     coordinates = leg.solve_leg_position_from_target_coordinates(x_positions[i], 
                                                                             y_positions[i], 
                                                                             z_positions[i], 
@@ -255,7 +248,7 @@ class Plotter:
                 
                 return left_plot
             else:
-
+                x_positions, y_positions, z_positions = ik_solver.motion
                 coordinates = ik_solver.solve_leg_position_from_target_coordinates(x_positions[i], 
                                                                             y_positions[i], 
                                                                             z_positions[i], 
