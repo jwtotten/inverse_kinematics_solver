@@ -33,7 +33,10 @@ if __name__ == "__main__":
     
     ik_2 = IkSolver(femur_length=femur_length_2, 
                   tibia_length=tibia_length_2)
-    
+    ik_2.x_offset = 1.0
+    ik_2.y_offset = 1.0
+    ik_2.z_offset = 1.0
+
     ik_3 = IkSolver(femur_length=femur_length_3, 
                   tibia_length=tibia_length_3)
     
@@ -66,4 +69,8 @@ if __name__ == "__main__":
     plotter = Plotter()
     plotter.plot_animated_3d_projection(x_targets, y_targets, z_targets, ik_solver = ik_1)
 
+
+    # plot the animated 3d projection of the solution
+    print(f"Leg 1: {ik_1}")
+    print(f"Leg 2: {ik_2}")
     plotter.plot_animated_3d_projection(x_targets, y_targets, z_targets, ik_solver = [ik_1, ik_2])
