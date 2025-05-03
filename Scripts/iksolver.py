@@ -27,6 +27,14 @@ class IkSolver(object):
         self.x_length: float = 5
         self.y_length: float = 3
         self.z_length: float = 1
+
+        # Set the leg position relative to the body dependig on the instance number of the leg
+        if len(self._instances) <= 3:
+            self.x_leg_position = -self.x_length/2 * len(self._instances)/3
+            self.y_leg_position = -self.y_length/2 * len(self._instances)/3
+        else:
+            self.x_leg_position = self.x_length/2 * (len(self._instances)-3)/3
+            self.y_leg_position = self.y_length/2 * (len(self._instances)-3)/3
     
     def __new__(cls, *args, **kwargs):
         if not len(cls._instances) < cls.limit:
@@ -148,6 +156,20 @@ class IkSolver(object):
 
         if verbose:
             print(f"Calculated leg coordinates:"
+                f"\n{coordinates}")
+            
+        # Apply offsets to the coordinates
+        coordinates[0] = [coordinates[0][0] + self.x_leg_position,
+                          coordinates[0][1] + self.y_leg_position,
+                          coordinates[0][2]]
+        coordinates[1] = [coordinates[1][0] + self.x_leg_position,
+                          coordinates[1][1] + self.y_leg_position,
+                          coordinates[1][2]]
+        coordinates[2] = [coordinates[2][0] + self.x_leg_position,
+                          coordinates[2][1] + self.y_leg_position,
+                          coordinates[2][2]]
+        if verbose:
+            print(f"Leg coordinates with offsets:"
                 f"\n{coordinates}")
             
         return coordinates
