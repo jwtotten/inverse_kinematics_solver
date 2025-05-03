@@ -37,8 +37,8 @@ class IkSolver(object):
     
     def __repr__(self) -> str:
         return_string: str = (f"{type(self).__name__}"
-                              f"(femur length={self.x}," 
-                              f"tibia length={self.y},"
+                              f"(femur length={self.femur_length}," 
+                              f"tibia length={self.tibia_length},"
                               f"x offset={self.x_offset},"
                               f"y offset={self.y_offset},"
                               f"z offset={self.z_offset})")
@@ -95,7 +95,7 @@ class IkSolver(object):
 
         :return: List of offsets [x, y, z]
         """
-        
+
         return [self.x_offset, self.y_offset, self.z_offset]
 
     @offets.setter
