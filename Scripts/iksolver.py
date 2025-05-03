@@ -30,11 +30,11 @@ class IkSolver(object):
 
         # Set the leg position relative to the body dependig on the instance number of the leg
         if len(self._instances) <= 3:
-            self.x_leg_position = -self.x_length/2 * len(self._instances)/3
-            self.y_leg_position = -self.y_length/2 * len(self._instances)/3
+            self.x_leg_position = 0
+            self.y_leg_position = -self.y_length/2 * (len(self._instances)-1)/2
         else:
-            self.x_leg_position = self.x_length/2 * (len(self._instances)-3)/3
-            self.y_leg_position = self.y_length/2 * (len(self._instances)-3)/3
+            self.x_leg_position = -self.x_length/2
+            self.y_leg_position = -self.y_length/2 * (len(self._instances)-1)/2
     
     def __new__(cls, *args, **kwargs):
         if not len(cls._instances) < cls.limit:
