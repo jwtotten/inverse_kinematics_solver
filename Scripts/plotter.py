@@ -207,20 +207,20 @@ class Plotter:
         leg_plots: list = []
 
         if isinstance(ik_solver, list):
-            for index, leg in enumerate(ik_solver):
-                coordinates = ik_solver.solve_leg_position_from_target_coordinates(x_positions[0], 
+            for leg in ik_solver:
+                coordinates = leg.solve_leg_position_from_target_coordinates(x_positions[0], 
                                                                             y_positions[0], 
                                                                             z_positions[0], 
                                                                             verbose=True)
-            # Extracting the coordinates from the forward kinematics result
-            x = [coordinates[0][0], coordinates[1][0], coordinates[2][0]]
-            y = [coordinates[0][1], coordinates[1][1], coordinates[2][1]]
-            z = [coordinates[0][2], coordinates[1][2], coordinates[2][2]]
-            
-            joint_points_l, = ax_1.plot(x, y, z, c='r', marker='o')
-            left_plot, = ax_1.plot(x, y, z, c='b')
-            joint_plots[index] = joint_points_l,
-            leg_plots[index] = left_plot,
+                # Extracting the coordinates from the forward kinematics result
+                x = [coordinates[0][0], coordinates[1][0], coordinates[2][0]]
+                y = [coordinates[0][1], coordinates[1][1], coordinates[2][1]]
+                z = [coordinates[0][2], coordinates[1][2], coordinates[2][2]]
+                
+                joint_points_l, = ax_1.plot(x, y, z, c='r', marker='o')
+                left_plot, = ax_1.plot(x, y, z, c='b')
+                joint_plots.append(joint_points_l,)
+                leg_plots.append(left_plot,)
 
         else:
             coordinates = ik_solver.solve_leg_position_from_target_coordinates(x_positions[0], 
@@ -237,19 +237,38 @@ class Plotter:
             left_plot, = ax_1.plot(x, y, z, c='b')
 
         def update_animated_plot(i):
-            coordinates = ik_solver.solve_leg_position_from_target_coordinates(x_positions[i], 
-                                                                        y_positions[i], 
-                                                                        z_positions[i], 
-                                                                        verbose=False)
-            # Extracting the coordinates from the forward kinematics result
-            x = [coordinates[0][0], coordinates[1][0], coordinates[2][0]]
-            y = [coordinates[0][1], coordinates[1][1], coordinates[2][1]]
-            z = [coordinates[0][2], coordinates[1][2], coordinates[2][2]]
 
-            joint_points_l.set_data_3d(x, y, z)
-            left_plot.set_data_3d(x, y, z)
-            
-            return left_plot
+            # ToDo: Adjust this function to work with multiple legs
+            if isinstance(ik_solver, list):
+                for idx, leg in enumerate(ik_solver):
+                    coordinates = leg.solve_leg_position_from_target_coordinates(x_positions[i], 
+                                                                            y_positions[i], 
+                                                                            z_positions[i], 
+                                                                            verbose=False)
+                    # Extracting the coordinates from the forward kinematics result
+                    x = [coordinates[0][0], coordinates[1][0], coordinates[2][0]]
+                    y = [coordinates[0][1], coordinates[1][1], coordinates[2][1]]
+                    z = [coordinates[0][2], coordinates[1][2], coordinates[2][2]]
+
+                    joint_plots[idx].set_data_3d(x, y, z)
+                    leg_plots[idx].set_data_3d(x, y, z)
+                
+                return left_plot
+            else:
+
+                coordinates = ik_solver.solve_leg_position_from_target_coordinates(x_positions[i], 
+                                                                            y_positions[i], 
+                                                                            z_positions[i], 
+                                                                            verbose=False)
+                # Extracting the coordinates from the forward kinematics result
+                x = [coordinates[0][0], coordinates[1][0], coordinates[2][0]]
+                y = [coordinates[0][1], coordinates[1][1], coordinates[2][1]]
+                z = [coordinates[0][2], coordinates[1][2], coordinates[2][2]]
+
+                joint_points_l.set_data_3d(x, y, z)
+                left_plot.set_data_3d(x, y, z)
+                
+                return left_plot
         
         ani = animation.FuncAnimation(fig, update_animated_plot, frames=len(x_positions), interval=100)
         plt.show()
