@@ -198,7 +198,7 @@ class Plotter:
 
         if isinstance(ik_solver, list):
             for leg in ik_solver:
-                x_positions, y_positions, z_positions = leg.motion
+                x_positions, y_positions, z_positions = leg.get_motion()
                 coordinates = leg.solve_leg_position_from_target_coordinates(x_positions[0], 
                                                                             y_positions[0], 
                                                                             z_positions[0], 
@@ -214,7 +214,7 @@ class Plotter:
                 leg_plots.append(left_plot,)
 
         else:
-            x_positions, y_positions, z_positions = ik_solver.motion
+            x_positions, y_positions, z_positions = ik_solver.get_motion()
             coordinates = ik_solver.solve_leg_position_from_target_coordinates(x_positions[0], 
                                                                             y_positions[0], 
                                                                             z_positions[0], 
@@ -233,7 +233,7 @@ class Plotter:
             # ToDo: Adjust this function to work with multiple legs
             if isinstance(ik_solver, list):
                 for idx, leg in enumerate(ik_solver):
-                    x_positions, y_positions, z_positions = leg.motion
+                    x_positions, y_positions, z_positions = leg.get_motion()
                     coordinates = leg.solve_leg_position_from_target_coordinates(x_positions[i], 
                                                                             y_positions[i], 
                                                                             z_positions[i], 
@@ -248,7 +248,7 @@ class Plotter:
                 
                 return left_plot
             else:
-                x_positions, y_positions, z_positions = ik_solver.motion
+                x_positions, y_positions, z_positions = ik_solver.get_motion()
                 coordinates = ik_solver.solve_leg_position_from_target_coordinates(x_positions[i], 
                                                                             y_positions[i], 
                                                                             z_positions[i], 

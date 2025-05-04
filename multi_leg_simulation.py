@@ -52,15 +52,8 @@ if __name__ == "__main__":
     except RuntimeError as e:
         print(f"Too many instances of the leg solver have been instanciated.")
         print(e)
-    
-    x=1.0
-    y=1.2
-    z=3.5
 
-    # Plot an animated 3D projection of the solution
-    x_targets = [1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0]
-    y_targets = [1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2]
-    z_targets = [3.5, 3.6, 3.7, 3.8, 3.7, 3.6, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5]
+    print(f"Leg 1: {ik_1}")
 
     # plot the animated 3d projection of the solution
     plotter = Plotter()

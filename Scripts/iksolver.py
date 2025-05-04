@@ -28,7 +28,6 @@ class IkSolver(object):
         self.y_length: float = 3
         self.z_length: float = 1
 
-        self.leg_direction: str = 'forward'
 
         # Set the leg position relative to the body dependig on the instance number of the leg
         if len(self._instances) <= 3:
@@ -39,8 +38,11 @@ class IkSolver(object):
             self.y_leg_position = -self.y_length/2 * (len(self._instances)-1)/2
 
         # set the direction of the motion of the leg.
-        self.motion = 'forward'
-        self.set_motion()
+        self.x_targets = None
+        self.y_targets = None
+        self.z_targets = None
+        self.leg_direction: None
+        self.set_motion(verbose=True)
     
     def __new__(cls, *args, **kwargs):
         if not len(cls._instances) < cls.limit:
@@ -59,45 +61,63 @@ class IkSolver(object):
                               f"leg direction = {self.leg_direction}")
         return return_string
     
-    @property
-    def motion(self) -> list:
+    
+    def get_motion(self) -> list:
         """
         Get the motion of the leg.
         :return: list of x, y and z target positions to the leg is set to find.
         """
         return [self.x_targets, self.y_targets, self.z_targets]
     
-    @motion.setter
-    def motion(self, direction:str) -> None:
+    def set_positions(self, verbose:bool = False) -> None:
         """
         Set the motion of the leg.
+        :param verbose: If True, print the coordinates
+        :type verbose: bool
         :return: None
         """
-        if direction == 'forward':
-            self.x_targets = [1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0]
-            self.y_targets = [1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0]
-            self.z_targets = [1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0]
+        if self.leg_direction == 'forward':
+            self.x_targets = [1.0, 1.0, 1.0, 1.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0]
+            self.y_targets = [1.0, 1.0, 1.0, 1.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0]
+            self.z_targets = [1.0, 1.0, 1.0, 1.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0]
             self.leg_direction = 'forward'
-        elif direction == 'backwards':
-            self.x_targets = self.x_targets.reverse()
-            self.y_targets = self.y_targets.reverse()
-            self.z_targets = self.z_targets.reverse()
+            if verbose:
+                print(f"x targets: {self.x_targets}")
+                print(f"y targets: {self.y_targets}")
+                print(f"z targets: {self.z_targets}")
+        elif self.leg_direction == 'backwards':
+            self.x_targets = [1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 1.0, 1.0, 1.0, 1.0]
+            self.y_targets = [1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 1.0, 1.0, 1.0, 1.0]
+            self.z_targets = [1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 1.0, 1.0, 1.0, 1.0]
+            if verbose:
+                print(f"x targets: {self.x_targets}")
+                print(f"y targets: {self.y_targets}")
+                print(f"z targets: {self.z_targets}")
             self.leg_direction = 'backwards'
         else:
             raise ValueError('No direction of leg motion specified.')
         
-    def set_motion(self) -> None:
+    def set_motion(self, verbose:bool = False) -> None:
         """
         This function checks the instance number of the leg and toggles the target positions based on if
         the leg should move forward or backwards.
+        :param verbose: If True, print the coordinates
+        :type verbose: bool
+        :return: None
         """
 
-        if len(self._instances)%2 == 0:
+        if len(self._instances)%2 != 0:
             # set the leg to move in the forward direction.
-            self.motion = 'forward'
+            if verbose:
+                print(f"Leg {len(self._instances)} is moving forward.")
+            self.leg_direction = 'forward'
+            self.set_positions(verbose=verbose)
         else:
             # set the leg to move in the backwards direction.
-            self.motion = 'backwards'
+            if verbose:
+                print(f"Leg {len(self._instances)} is moving backwards.")
+            self.leg_direction = 'backwards'
+            self.set_positions(verbose=verbose)
 
 
     def solve_inverse_kinematics(self, x, y, z) -> list:
