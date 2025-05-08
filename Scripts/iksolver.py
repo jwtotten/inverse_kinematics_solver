@@ -43,6 +43,13 @@ class IkSolver(object):
         self.z_targets = None
         self.leg_direction: None
         self.set_motion(verbose=True)
+
+        #  Make the x and y targets negative if the leg is on the left side of the body.
+        if len(self._instances) > 3:
+            self.x_targets = [-x for x in self.x_targets]
+            self.y_targets = [-y for y in self.y_targets]
+            self.x_offset *= -1
+            self.y_offset *= -1
     
     def __new__(cls, *args, **kwargs):
         if not len(cls._instances) < cls.limit:
