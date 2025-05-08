@@ -38,7 +38,7 @@ class IkSolver(object):
             self.y_leg_position = -self.y_length/2 * (len(self._instances)-4)/2
 
         # set the direction of the motion of the leg.
-        self.n_leg_points = 100
+        self.n_leg_points:int = 20
         self.x_targets = None
         self.y_targets = None
         self.z_targets = None
@@ -84,13 +84,17 @@ class IkSolver(object):
         :type verbose: bool
         :return: None
         """
-        if self.leg_direction == 'forward':
-            # use an equation to generate the positions for the leg coordinates
-            # _x_targets_1 = [-x**2-x/2+1 for x in range(0, self.n_leg_points/2)]
-            # _x_targets_2 = [x for x in range(self.n_leg_points/2, self.n_leg_points)]
-            # self.x_targets = np.array([_x_targets_1, _x_targets_2])
+        # use an equation to generate the positions for the leg coordinates
+        _x_targets_1 = [-x**2+1 for x in range(0, int(self.n_leg_points/2))]
+        _x_targets_2 = [1.0 for x in range(int(self.n_leg_points/2), self.n_leg_points)]
 
-            self.x_targets = [1.0, 1.0, 1.0, 1.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 1.0, 1.0, 1.0]
+        if self.leg_direction == 'forward':
+            
+            self.x_targets = np.array([])
+            self.x_targets = np.append(self.x_targets, _x_targets_1)
+            self.x_targets = np.append(self.x_targets, _x_targets_2)
+            print(self.x_targets)
+            # self.x_targets = [1.0, 1.0, 1.0, 1.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 1.0, 1.0, 1.0]
             self.y_targets = [1.0, 1.0, 1.0, 1.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 1.0, 1.0, 1.0]
             self.z_targets = [1.0, 1.0, 1.0, 1.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 1.0, 1.0, 1.0]
             self.leg_direction = 'forward'
