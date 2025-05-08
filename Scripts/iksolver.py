@@ -85,6 +85,11 @@ class IkSolver(object):
         :return: None
         """
         if self.leg_direction == 'forward':
+            # use an equation to generate the positions for the leg coordinates
+            # _x_targets_1 = [-x**2-x/2+1 for x in range(0, self.n_leg_points/2)]
+            # _x_targets_2 = [x for x in range(self.n_leg_points/2, self.n_leg_points)]
+            # self.x_targets = np.array([_x_targets_1, _x_targets_2])
+
             self.x_targets = [1.0, 1.0, 1.0, 1.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 1.0, 1.0, 1.0]
             self.y_targets = [1.0, 1.0, 1.0, 1.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 1.0, 1.0, 1.0]
             self.z_targets = [1.0, 1.0, 1.0, 1.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 1.0, 1.0, 1.0]
