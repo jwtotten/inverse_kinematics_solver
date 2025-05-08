@@ -35,7 +35,7 @@ class IkSolver(object):
             self.y_leg_position = -self.y_length/2 * (len(self._instances)-1)/2
         else:
             self.x_leg_position = -self.x_length/2
-            self.y_leg_position = -self.y_length/2 * (len(self._instances)-1)/2
+            self.y_leg_position = -self.y_length/2 * (len(self._instances)-4)/2
 
         # set the direction of the motion of the leg.
         self.x_targets = None
