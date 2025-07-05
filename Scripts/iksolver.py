@@ -88,14 +88,25 @@ class IkSolver(object):
         _x_targets_1 = [-x**2+1 for x in range(0, int(self.n_leg_points/2))]
         _x_targets_2 = [1.0 for x in range(int(self.n_leg_points/2), self.n_leg_points)]
 
+        _y_targets_1 = [0.9 for y in range(0, int(self.n_leg_points/2))]
+        _y_targets_2 = [0.9 for y in range(int(self.n_leg_points/2), self.n_leg_points)]
+
+        _z_targets_1 = [z for z in range(0, int(self.n_leg_points/2))]
+        _z_targets_2 = [z for z in range(int(self.n_leg_points/2), self.n_leg_points)]
+
         if self.leg_direction == 'forward':
             
-            self.x_targets = np.array([])
-            self.x_targets = np.append(self.x_targets, _x_targets_1)
-            self.x_targets = np.append(self.x_targets, _x_targets_2)
+            self.x_targets = _x_targets_1 + _x_targets_2 + _x_targets_1
+            self.x_targets = [val/max(self.x_targets) for val in self.x_targets]
+
+            self.y_targets = _y_targets_1 + _y_targets_2 + _y_targets_1
+            self.y_targets = [val/max(self.y_targets) for val in self.y_targets]
+
+            self.z_targets = _z_targets_1 + _z_targets_2 + _z_targets_1
+            self.z_targets = [val/max(self.z_targets) for val in self.z_targets]
             print(self.x_targets)
-            # self.x_targets = [1.0, 1.0, 1.0, 1.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 1.0, 1.0, 1.0]
-            self.y_targets = [1.0, 1.0, 1.0, 1.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 1.0, 1.0, 1.0]
+            self.x_targets = [1.0, 1.0, 1.0, 1.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 1.0, 1.0, 1.0]
+            self.y_targets = [1.0 for _ in range(len(self.x_targets))]
             self.z_targets = [1.0, 1.0, 1.0, 1.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 1.0, 1.0, 1.0]
             self.leg_direction = 'forward'
             if verbose:
@@ -103,8 +114,11 @@ class IkSolver(object):
                 print(f"y targets: {self.y_targets}")
                 print(f"z targets: {self.z_targets}")
         elif self.leg_direction == 'backwards':
+            self.x_targets = np.array([])
+            self.x_targets = np.append(self.x_targets, _x_targets_2)
+            self.x_targets = np.append(self.x_targets, _x_targets_1)
             self.x_targets = [1.0, 1.0, 1.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 1.0, 1.0, 1.0, 1.0]
-            self.y_targets = [1.0, 1.0, 1.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 1.0, 1.0, 1.0, 1.0]
+            self.y_targets = [1.0 for _ in range(len(self.x_targets))]
             self.z_targets = [1.0, 1.0, 1.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 1.0, 1.0, 1.0, 1.0]
             if verbose:
                 print(f"x targets: {self.x_targets}")
