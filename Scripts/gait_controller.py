@@ -52,5 +52,8 @@ class GaitController:
         for half of the gait cycle each.
         :rtype: list
         """
-        raise NotImplemented
+        leg_forward = np.zeros((self.number_samples/2, self.iksolver.x1))
+        leg_backward = np.zeros((self.number_samples/2, self.iksolver.x0))
+
+        return leg_forward, leg_backward
     
