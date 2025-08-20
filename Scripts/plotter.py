@@ -199,7 +199,7 @@ class Plotter:
         if isinstance(ik_solver, list):
             for leg in ik_solver:
                 x_positions, y_positions, z_positions = leg.get_motion()
-                if not (x_positions and y_positions and z_positions):
+                if any(x is None for x in [x_positions, y_positions, z_positions]):
                     raise ValueError("x_positions, y_positions, and z_positions must not be empty.")
                 coordinates = leg.solve_leg_position_from_target_coordinates(x_positions[0], 
                                                                             y_positions[0], 
