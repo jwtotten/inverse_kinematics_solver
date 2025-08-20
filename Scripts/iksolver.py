@@ -69,12 +69,13 @@ class IkSolver(object):
                               f"leg direction = {self.leg_direction}")
         return return_string
     
-    def __del__(cls):
+    def __del__(self):
         """
         Remove the instance of the ik_solver and reduce the number of instances by 1.
         """
-        if cls in cls._instances:
-            cls._instances.remove(cls)
+        if self in self._instances:
+            self._instances.remove(self)
+            print(f"There are now {len(self._instances)} active instances.")
         else:
             raise RuntimeError("Instance not found in the list of instances.")
     

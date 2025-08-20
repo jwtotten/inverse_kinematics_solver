@@ -11,31 +11,55 @@ class GaitPattern:
     WAVE = 1
     RIPPLE = 2
 
-class GaitController(IkSolver):
-    def __init__(self, femur_length: float, tibia_length: float, number_samples: int = 50):
+class GaitController:
+    def __init__(self, iksolver: IkSolver, number_samples: int = 50):
         """
-        Initialize GaitController with leg parameters and gait settings
+        Initialize GaitController using an existing IkSolver instance
         """
-        super(IkSolver, self).__init__(femur_length, tibia_length)
+        self.iksolver = iksolver
+        self.number_samples = number_samples
+        
+        # Mirror IkSolver properties
+        self.x_length = self.iksolver.x_length
+        self.y_length = self.iksolver.y_length
+        self.z_length = self.iksolver.z_length
         
         # Gait parameters
-        self.number_samples = number_samples
         self.step_height = 2.0
         self.step_length = 4.0
         self.cycle_time = 1.0
         self.duty_factor = 0.5
         self.phase_offset = 0.0
         
-        # Time vector for gait calculation
-        self.time = np.linspace(0, self.cycle_time, number_samples)
+        # Create time vector for the gait cycle
+        self.time = np.linspace(0, self.cycle_time, self.number_samples)
         
-        # Initialize gait cycle
+        # Initialize motion vectors
+        self.x_targets = None
+        self.y_targets = None
+        self.z_targets = None
+        
+        # Generate initial gait cycle
         self._generate_gait_cycle()
+
+    def solve_leg_position_from_target_coordinates(self, x: float, y: float, z: float, verbose: bool = False) -> list:
+        """
+        Delegate to IkSolver's method for coordinate calculation
+        """
+        return self.iksolver.solve_leg_position_from_target_coordinates(x, y, z, verbose)
+
+    def get_motion(self) -> list:
+        """
+        Return motion vectors in same format as IkSolver
+        """
+        if any(x is None for x in [self.x_targets, self.y_targets, self.z_targets]):
+            self._generate_gait_cycle()
+        return [self.x_targets, self.y_targets, self.z_targets]
 
     def set_gait_pattern(self, pattern: int) -> None:
         """Set phase offset based on leg instance and gait pattern"""
-        instance_number = len(self._instances) - 1
-        
+        instance_number = len(self.iksolver._instances) - 1
+
         if pattern == GaitPattern.TRIPOD:
             self.phase_offset = 0.5 if instance_number % 2 else 0
         elif pattern == GaitPattern.WAVE:
