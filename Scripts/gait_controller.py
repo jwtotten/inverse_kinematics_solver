@@ -16,6 +16,8 @@ class GaitController:
         """
         Initialize GaitController using an existing IkSolver instance
         """
+        if not isinstance(iksolver, IkSolver):
+            raise TypeError("iksolver must be an instance of IkSolver")
         self.iksolver = iksolver
         self.number_samples = number_samples
         
