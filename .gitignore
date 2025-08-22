@@ -5,3 +5,4 @@
 venv/
 
 Scripts/__pycache__/
+Unittests/__pycache__
