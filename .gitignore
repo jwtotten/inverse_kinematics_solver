@@ -6,3 +6,6 @@ venv/
 
 Scripts/__pycache__/
 Unittests/__pycache__
+
+# Claude Code editor config
+.claude/

@@ -18,6 +18,8 @@ class GaitController:
         """
         if not isinstance(iksolver, IkSolver):
             raise TypeError("iksolver must be an instance of IkSolver")
+        if not isinstance(number_samples, int):
+            raise TypeError("number_samples must be an integer")
         self.iksolver = iksolver
         self.number_samples = number_samples
         
@@ -106,7 +108,7 @@ class GaitController:
         :return: leg_stationary :: a list with the leg at a fixed position for the full gait cycle.
         :rtype: list
         """
-        leg_stationary = np.zeros((self.number_samples, self.iksolver.y0))
+        leg_stationary = np.zeros(self.number_samples)
         
         return leg_stationary
     

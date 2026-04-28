@@ -130,9 +130,9 @@ class Plotter:
             joint_points_r.set_data(x, z)
             right_plot.set_data(x, z)
 
-            t_r_t.set_position((x[2], y[2]))
-            c_r_t.set_position((x[0], y[0]))
-            f_r_t.set_position((x[1], y[1]))
+            t_r_t.set_position((x[2], z[2]))
+            c_r_t.set_position((x[0], z[0]))
+            f_r_t.set_position((x[1], z[1]))
             
             return left_plot, right_plot
         
@@ -248,7 +248,7 @@ class Plotter:
                     joint_plots[idx].set_data_3d(x, y, z)
                     leg_plots[idx].set_data_3d(x, y, z)
                 
-                return left_plot
+                return leg_plots
             else:
                 x_positions, y_positions, z_positions = ik_solver.get_motion()
                 coordinates = ik_solver.solve_leg_position_from_target_coordinates(x_positions[i], 
