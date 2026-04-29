@@ -39,5 +39,5 @@ if __name__ == "__main__":
     
 
     # plot the animated 3d projection of the solution
-    plotter.plot_animated_3d_projection(x_targets, y_targets, z_targets, ik_solver = ik)
+    plotter.plot_animated_3d_projection(ik_solver=ik)
 

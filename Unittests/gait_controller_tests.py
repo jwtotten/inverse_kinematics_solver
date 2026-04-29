@@ -1,5 +1,6 @@
 import unittest
-from Scripts.gait_controller import GaitController
+import numpy as np
+from Scripts.gait_controller import GaitController, GaitPattern
 from Scripts.iksolver import IkSolver
 
 FEMUR_LENGTH = 3.5
@@ -7,58 +8,68 @@ TIBIA_LENGTH = 3.5
 
 class GaitControllerTests(unittest.TestCase):
 
-    test_01 = False
-    test_02 = False
-    test_03 = False
-
     @classmethod
     def setUpClass(cls):
         """
-        This class method is called at the instantiation of the class itself, meaning only one IkSolver class is created and used for repeat testing. If this was called in the setUp() method, this would be repeatedly reinstanciated.
+        Single IkSolver shared across all tests to avoid hitting the 6-instance class limit.
         """
         cls.ik_solver = IkSolver(femur_length=FEMUR_LENGTH, tibia_length=TIBIA_LENGTH)
 
-    def test_01_initialisation(self):
-        """
-        Test 01 covers the initialisation of the class with different parameters.
-        """
+    @classmethod
+    def tearDownClass(cls):
+        del cls.ik_solver
 
-        # This first case should fail, as no IkSolver class is provided.
-        try:
-            self.gait_controller = GaitController()
-        except TypeError:
-            assert True
-        except Exception:
-            assert False
+    # ------------------------------------------------------------------
+    # test_01 — initialisation
+    # ------------------------------------------------------------------
 
-        # This next case should also raise an error, as None as been passed instead of the IkSolver class.
-        try:
-            self.gait_controller = GaitController(iksolver=None)
-        except TypeError:
-            assert True
-        except Exception:
-            assert False
+    def test_01_initialisation_no_args_raises(self):
+        """GaitController() with no arguments must raise TypeError."""
+        with self.assertRaises(TypeError):
+            GaitController()
 
-        # This next case should fail, as the correct IkSolver class has been passed but the number of instances is not of the correct type.
-        try:
-            self.gait_controller = GaitController(iksolver=self.ik_solver, num_instances="not_a_number")
-        except TypeError:
-            assert True
-        except Exception:
-            assert False
+    def test_01_initialisation_none_raises(self):
+        """GaitController(iksolver=None) must raise TypeError."""
+        with self.assertRaises(TypeError):
+            GaitController(iksolver=None)
 
-        # This next case should pass, as the correct IkSolver class has been given, and the number of instances to calculate has been left at default.
-        try:
-            self.gait_controller = GaitController(iksolver=self.ik_solver)
-            assert True
-        except Exception:
-            assert False
-        
-        self.test_01 = True
+    def test_01_initialisation_invalid_number_samples_raises(self):
+        """B7: GaitController must reject a non-integer number_samples."""
+        with self.assertRaises(TypeError):
+            GaitController(iksolver=self.ik_solver, number_samples="not_a_number")
 
-    @unittest.skipIf(not test_01, "Initialisation Test was not passed.")
-    def test_02_gait_cycle(self):
-        """
-        Test 02 covers the functionality of setting up the gait cycle.        
-        """
-        pass
+    def test_01_initialisation_valid(self):
+        """GaitController with a valid IkSolver and default samples must construct cleanly."""
+        gc = GaitController(iksolver=self.ik_solver)
+        self.assertIsNotNone(gc)
+
+    # ------------------------------------------------------------------
+    # test_02 — gait cycle
+    # ------------------------------------------------------------------
+
+    def test_02_get_motion_returns_three_vectors(self):
+        """get_motion() must return a list of three non-None numpy arrays."""
+        gc = GaitController(iksolver=self.ik_solver)
+        motion = gc.get_motion()
+        self.assertEqual(len(motion), 3)
+        for vec in motion:
+            self.assertIsNotNone(vec)
+
+    def test_02_gait_pattern_tripod(self):
+        """Setting TRIPOD gait pattern must not raise and must produce motion vectors."""
+        gc = GaitController(iksolver=self.ik_solver)
+        gc.set_gait_pattern(GaitPattern.TRIPOD)
+        x, y, z = gc.get_motion()
+        self.assertEqual(len(x), gc.number_samples)
+        self.assertEqual(len(z), gc.number_samples)
+
+    # ------------------------------------------------------------------
+    # test_03 — stationary leg equation
+    # ------------------------------------------------------------------
+
+    def test_03_stationary_leg_equation_shape(self):
+        """B3: stationary_leg_equation() must return an array of length number_samples."""
+        gc = GaitController(iksolver=self.ik_solver)
+        result = gc.stationary_leg_equation()
+        self.assertEqual(len(result), gc.number_samples)
+        self.assertTrue(all(v == 0.0 for v in result))
