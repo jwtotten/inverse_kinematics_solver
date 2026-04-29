@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Hexapod IK Simulation</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0d1117;
+      color: #e6edf3;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    h1 { color: #58a6ff; font-size: 1.1rem; margin-bottom: 14px; letter-spacing: 1px; }
+    canvas {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      display: block;
+    }
+    .controls {
+      margin-top: 14px;
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .ctrl { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    label { font-size: 0.72rem; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; }
+    select, input[type=range] {
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: #e6edf3;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    input[type=range] { width: 130px; padding: 0; }
+    .legend {
+      margin-top: 12px;
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .leg-badge {
+      font-size: 0.72rem;
+      padding: 3px 8px;
+      border-radius: 10px;
+      border: 1px solid #30363d;
+    }
+  </style>
+</head>
+<body>
+  <h1>HEXAPOD INVERSE KINEMATICS — LIVE SIMULATION</h1>
+  <canvas id="canvas" width="820" height="520"></canvas>
+
+  <div class="controls">
+    <div class="ctrl">
+      <label>Gait Pattern</label>
+      <select id="gait">
+        <option value="tripod">Tripod</option>
+        <option value="wave">Wave</option>
+        <option value="ripple">Ripple</option>
+      </select>
+    </div>
+    <div class="ctrl">
+      <label>Speed</label>
+      <input type="range" id="speed" min="0.2" max="3" step="0.1" value="1">
+    </div>
+    <div class="ctrl">
+      <label>Azimuth</label>
+      <input type="range" id="azimuth" min="-180" max="180" step="1" value="35">
+    </div>
+    <div class="ctrl">
+      <label>Elevation</label>
+      <input type="range" id="elevation" min="5" max="80" step="1" value="28">
+    </div>
+  </div>
+
+  <div class="legend" id="legend"></div>
+
+  <script>
+  (() => {
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // ── Robot parameters (matching Scripts/iksolver.py) ──────────────────
+    const FEMUR   = 3.5;
+    const TIBIA   = 3.5;
+    const X_OFF   = -5;
+    const Y_OFF   = -2;
+    const Z_OFF   = -6;
+    const X_LEN   = 5;
+    const Y_LEN   = 3;
+    const Z_LEN   = 1;
+
+    // ── Gait parameters (matching Scripts/gait_controller.py) ────────────
+    const STEP_H  = 2.0;
+    const STEP_L  = 0.5;   // tuned so IK stays in valid range with these offsets
+    const DUTY    = 0.5;
+
+    // ── Working base target (verified analytically for FEMUR=TIBIA=3.5) ──
+    // After offsets (x+X_OFF, y+Y_OFF, z+Z_OFF) must give L ≤ FEMUR+TIBIA=7
+    const BASE_X  = 1.2;
+    const BASE_Y  = 1.0;
+    const BASE_Z  = 1.2;
+
+    // ── Leg table (instance order matches Python __new__ ordering) ────────
+    // side: +1 = right (legs 0-2), -1 = left (legs 3-5, coords/offsets negated)
+    const LEGS = [
+      { xLeg: 0,         yLeg: 0,           side: 1,  label: 'R-Front'  },
+      { xLeg: 0,         yLeg: -Y_LEN/4,    side: 1,  label: 'R-Mid'    },
+      { xLeg: 0,         yLeg: -Y_LEN/2,    side: 1,  label: 'R-Rear'   },
+      { xLeg: -X_LEN/2,  yLeg: 0,           side: -1, label: 'L-Front'  },
+      { xLeg: -X_LEN/2,  yLeg: -Y_LEN/4,   side: -1, label: 'L-Mid'    },
+      { xLeg: -X_LEN/2,  yLeg: -Y_LEN/2,   side: -1, label: 'L-Rear'   },
+    ];
+
+    const LEG_COLORS = ['#58a6ff','#3fb950','#ffa657','#d2a8ff','#ff7b72','#79c0ff'];
+
+    // ── Phase offsets per gait pattern ───────────────────────────────────
+    function phaseFor(legIdx, gait) {
+      if (gait === 'tripod') return legIdx % 2 === 0 ? 0 : 0.5;
+      if (gait === 'wave')   return (legIdx * (1/6)) % 1;
+      if (gait === 'ripple') return (legIdx * 0.25)  % 1;
+      return 0;
+    }
+
+    // ── Gait trajectory at normalised time t ∈ [0,1) ────────────────────
+    function gaitTarget(t, phase, legIdx) {
+      const p = (t + phase) % 1;
+      const s = LEGS[legIdx].side;
+      let dx, dz;
+      if (p < DUTY) {
+        const k = p / DUTY;                    // 0→1 during stance
+        dx = STEP_L * (0.5 - k);              // foot sweeps backward
+        dz = 0;
+      } else {
+        const k = (p - DUTY) / (1 - DUTY);    // 0→1 during swing
+        dx = STEP_L * (k - 0.5);              // foot sweeps forward
+        dz = STEP_H * Math.sin(k * Math.PI);  // arc upward
+      }
+      return {
+        x: (BASE_X + dx) * s,
+        y:  BASE_Y * s,
+        z:  BASE_Z + dz,
+      };
+    }
+
+    // ── IK solver (Scripts/iksolver.py → solve_inverse_kinematics) ───────
+    function solveIK(x, y, z, side) {
+      const xo = side === -1 ? -X_OFF : X_OFF;  // offsets negated for left legs
+      const yo = side === -1 ? -Y_OFF : Y_OFF;
+      const xa = x + xo;
+      const ya = y + yo;
+      const za = z + Z_OFF;
+      const j1 = Math.atan2(ya, xa);
+      const H  = Math.hypot(xa, ya);
+      const L  = Math.hypot(H, za);
+      const cJ3 = clamp((FEMUR*FEMUR + TIBIA*TIBIA - L*L) / (2*FEMUR*TIBIA), -1, 1);
+      const j3  = Math.acos(cJ3);
+      const cB  = clamp((L*L + FEMUR*FEMUR - TIBIA*TIBIA) / (2*L*FEMUR), -1, 1);
+      const b   = Math.acos(cB);
+      const a   = Math.atan2(za, H);
+      const j2  = b + a;
+      return [j1, j2, j3];
+    }
+
+    // ── FK solver (Scripts/iksolver.py → solve_forward_kinematics) ───────
+    function solveFK(q1, q2, q3) {
+      const x1 = 0, y1 = 0, z1 = 0;
+      const x2 = x1 - FEMUR * Math.cos(q1) * Math.cos(q2);
+      const y2 = y1 - FEMUR * Math.sin(q1) * Math.cos(q2);
+      const z2 =      FEMUR * Math.sin(q2);
+      const x3 = x2 - TIBIA * Math.cos(q1) * Math.cos(q2 + q3);
+      const y3 = y2 - TIBIA * Math.sin(q1) * Math.cos(q2 + q3);
+      const z3 = z2 - TIBIA * Math.sin(q2 + q3);
+      return [[x1,y1,z1],[x2,y2,z2],[x3,y3,z3]];
+    }
+
+    function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
+
+    // ── 3D → 2D projection ───────────────────────────────────────────────
+    function project3D(px, py, pz, az, el, scale, cx, cy) {
+      // Rotate around Z (azimuth), then tilt around X (elevation)
+      const azR = az * Math.PI / 180;
+      const elR = el * Math.PI / 180;
+      const rx =  px * Math.cos(azR) + py * Math.sin(azR);
+      const ry = -px * Math.sin(azR) + py * Math.cos(azR);
+      const rz =  pz;
+      // Elevation tilt
+      const sx =  rx;
+      const sy =  ry * Math.sin(elR) - rz * Math.cos(elR);
+      return { sx: cx + sx * scale, sy: cy + sy * scale };
+    }
+
+    // ── Draw helpers ──────────────────────────────────────────────────────
+    function line3D(a, b, az, el, scale, cx, cy, color, width) {
+      const pa = project3D(...a, az, el, scale, cx, cy);
+      const pb = project3D(...b, az, el, scale, cx, cy);
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.moveTo(pa.sx, pa.sy);
+      ctx.lineTo(pb.sx, pb.sy);
+      ctx.stroke();
+    }
+
+    function dot3D(p, az, el, scale, cx, cy, color, r) {
+      const pp = project3D(...p, az, el, scale, cx, cy);
+      ctx.beginPath();
+      ctx.fillStyle = color;
+      ctx.arc(pp.sx, pp.sy, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // ── Build legend badges ───────────────────────────────────────────────
+    const legendEl = document.getElementById('legend');
+    LEGS.forEach((leg, i) => {
+      const badge = document.createElement('span');
+      badge.className = 'leg-badge';
+      badge.id = `badge-${i}`;
+      badge.style.color = LEG_COLORS[i];
+      badge.style.borderColor = LEG_COLORS[i] + '66';
+      badge.textContent = `Leg ${i+1} ${leg.label}`;
+      legendEl.appendChild(badge);
+    });
+
+    // ── Animation loop ────────────────────────────────────────────────────
+    let t = 0;
+
+    function drawFrame() {
+      const gait  = document.getElementById('gait').value;
+      const speed = parseFloat(document.getElementById('speed').value);
+      const az    = parseFloat(document.getElementById('azimuth').value);
+      const el    = parseFloat(document.getElementById('elevation').value);
+      const scale = 32;
+      const cx    = canvas.width  / 2 + 40;
+      const cy    = canvas.height / 2 - 60;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const proj = (x,y,z) => project3D(x, y, z, az, el, scale, cx, cy);
+
+      // ── Ground grid ───────────────────────────────────────────────────
+      ctx.globalAlpha = 0.25;
+      const gRange = [-12, -8, -4, 0, 4, 8, 12];
+      const gY = -9;
+      gRange.forEach(gx => {
+        const pa = proj(gx, gRange[0], gY);
+        const pb = proj(gx, gRange[gRange.length-1], gY);
+        ctx.beginPath(); ctx.strokeStyle = '#30363d'; ctx.lineWidth = 0.5;
+        ctx.moveTo(pa.sx, pa.sy); ctx.lineTo(pb.sx, pb.sy); ctx.stroke();
+      });
+      gRange.forEach(gz => {
+        const pa = proj(gRange[0], gz, gY);
+        const pb = proj(gRange[gRange.length-1], gz, gY);
+        ctx.beginPath(); ctx.strokeStyle = '#30363d'; ctx.lineWidth = 0.5;
+        ctx.moveTo(pa.sx, pa.sy); ctx.lineTo(pb.sx, pb.sy); ctx.stroke();
+      });
+      ctx.globalAlpha = 1.0;
+
+      // ── Robot body box ────────────────────────────────────────────────
+      const bx0 = 0, bx1 = -X_LEN/2;
+      const by0 = 0, by1 = -Y_LEN/2;
+      const bz0 = -Z_LEN/2, bz1 = Z_LEN/2;
+      const bc = [
+        [bx0,by0,bz0],[bx1,by0,bz0],[bx1,by1,bz0],[bx0,by1,bz0],
+        [bx0,by0,bz1],[bx1,by0,bz1],[bx1,by1,bz1],[bx0,by1,bz1],
+      ];
+      const edges = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],
+                     [0,4],[1,5],[2,6],[3,7]];
+      edges.forEach(([a,b]) => line3D(bc[a], bc[b], az, el, scale, cx, cy, '#3d8bcd', 1.5));
+
+      // Body fill top face
+      ctx.globalAlpha = 0.08;
+      ctx.beginPath();
+      ctx.fillStyle = '#58a6ff';
+      [4,5,6,7,4].forEach((i,idx) => {
+        const p = proj(...bc[i]);
+        idx === 0 ? ctx.moveTo(p.sx, p.sy) : ctx.lineTo(p.sx, p.sy);
+      });
+      ctx.fill();
+      ctx.globalAlpha = 1.0;
+
+      // ── Legs ──────────────────────────────────────────────────────────
+      LEGS.forEach((leg, i) => {
+        const phase  = phaseFor(i, gait);
+        const target = gaitTarget(t, phase, i);
+        const p      = (t + phase) % 1;
+        const isSwing = p >= DUTY;
+
+        const [q1, q2, q3] = solveIK(target.x, target.y, target.z, leg.side);
+        const joints = solveFK(q1, q2, q3);
+
+        // Apply leg position offsets (matching solve_leg_position_from_target_coordinates)
+        const world = joints.map(([jx,jy,jz]) => [
+          jx + leg.xLeg,
+          jy + leg.yLeg,
+          jz
+        ]);
+
+        // Hip attachment point on body
+        const hip = [leg.xLeg, leg.yLeg, 0];
+
+        const color  = LEG_COLORS[i];
+        const alpha  = isSwing ? 1.0 : 0.7;
+        ctx.globalAlpha = alpha;
+
+        // Coxa → femur → tibia
+        line3D(hip, world[1], az, el, scale, cx, cy, color, 2.5);
+        line3D(world[1], world[2], az, el, scale, cx, cy, color, 2.5);
+
+        // Joint dots
+        dot3D(hip,      az, el, scale, cx, cy, color,   4);
+        dot3D(world[1], az, el, scale, cx, cy, '#e6edf3', 3);
+        dot3D(world[2], az, el, scale, cx, cy, isSwing ? '#f85149' : color, 4);
+
+        ctx.globalAlpha = 1.0;
+
+        // Foot shadow on ground
+        const footXY = proj(world[2][0], world[2][1], gY);
+        const bodyProj = proj(world[2][0], world[2][1], world[2][2]);
+        ctx.globalAlpha = 0.2;
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([2, 3]);
+        ctx.moveTo(bodyProj.sx, bodyProj.sy);
+        ctx.lineTo(footXY.sx, footXY.sy);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 1.0;
+
+        // Update badge
+        const badge = document.getElementById(`badge-${i}`);
+        if (badge) badge.textContent = `Leg ${i+1} ${leg.label}: ${isSwing ? '↑swing' : '→stance'}`;
+      });
+
+      // ── HUD ───────────────────────────────────────────────────────────
+      ctx.fillStyle = '#8b949e';
+      ctx.font = '11px Courier New';
+      ctx.fillText(`t = ${t.toFixed(3)}   gait = ${gait.toUpperCase()}   speed = ${speed.toFixed(1)}×`, 16, 20);
+      ctx.fillText(`FEMUR = ${FEMUR}  TIBIA = ${TIBIA}  step_h = ${STEP_H}  step_l = ${STEP_L}`, 16, 36);
+
+      t = (t + 0.003 * speed) % 1;
+      requestAnimationFrame(drawFrame);
+    }
+
+    drawFrame();
+  })();
+  </script>
+</body>
+</html>
