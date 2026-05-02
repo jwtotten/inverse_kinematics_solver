@@ -110,20 +110,28 @@
     // After offsets (x+X_OFF, y+Y_OFF, z+Z_OFF) must give L ≤ FEMUR+TIBIA=7
     // Valid STEP_L range: up to ~2.4; BASE_X=1.5 centres the stride comfortably.
     const BASE_X  = 1.5;
-    const BASE_Y  = 1.0;
+    const BASE_Y  = 1.5;   // raised to improve visual foot placement and IK margin
     const BASE_Z  = 1.2;
 
     // ── Leg table (instance order matches Python __new__ ordering) ────────
     // side: +1 = right (legs 0-2), -1 = left (legs 3-5, coords/offsets negated)
+    // LEG_FORE_AFT: fore/aft yOff magnitude for front/rear legs.
+    // Derivation (non-overlapping world-y corridors, buffer B=0.2):
+    //   yOff_front > STEP_L − |yLeg_mid| + B = 2.0 − 0.75 + 0.2 = 1.45
+    // Using 1.5 gives a 0.25-unit world-y gap between every adjacent leg pair,
+    // eliminating collisions in all gait patterns (tripod is worst case).
+    // IK validity: worst-case L ≈ 6.65 < FEMUR+TIBIA=7.0 ✓
+    const LEG_FORE_AFT = 1.5;
+
     // yOff staggers foot rest positions fore/aft so the hexapod forms a
     // symmetric fan pattern from above: front feet forward, rear feet back.
     const LEGS = [
-      { xLeg: 0,        yLeg: 0,          yOff:  Y_LEN/4, side:  1, label: 'R-Front' },
-      { xLeg: 0,        yLeg: -Y_LEN/4,  yOff:  0,        side:  1, label: 'R-Mid'   },
-      { xLeg: 0,        yLeg: -Y_LEN/2,  yOff: -Y_LEN/4, side:  1, label: 'R-Rear'  },
-      { xLeg: -X_LEN/2, yLeg: 0,          yOff:  Y_LEN/4, side: -1, label: 'L-Front' },
-      { xLeg: -X_LEN/2, yLeg: -Y_LEN/4,  yOff:  0,        side: -1, label: 'L-Mid'   },
-      { xLeg: -X_LEN/2, yLeg: -Y_LEN/2,  yOff: -Y_LEN/4, side: -1, label: 'L-Rear'  },
+      { xLeg: 0,        yLeg: 0,          yOff:  LEG_FORE_AFT, side:  1, label: 'R-Front' },
+      { xLeg: 0,        yLeg: -Y_LEN/4,  yOff:  0,             side:  1, label: 'R-Mid'   },
+      { xLeg: 0,        yLeg: -Y_LEN/2,  yOff: -LEG_FORE_AFT, side:  1, label: 'R-Rear'  },
+      { xLeg: -X_LEN/2, yLeg: 0,          yOff:  LEG_FORE_AFT, side: -1, label: 'L-Front' },
+      { xLeg: -X_LEN/2, yLeg: -Y_LEN/4,  yOff:  0,             side: -1, label: 'L-Mid'   },
+      { xLeg: -X_LEN/2, yLeg: -Y_LEN/2,  yOff: -LEG_FORE_AFT, side: -1, label: 'L-Rear'  },
     ];
 
     const LEG_COLORS = ['#58a6ff','#3fb950','#ffa657','#d2a8ff','#ff7b72','#79c0ff'];

@@ -1,15 +1,17 @@
 /**
  * TDD tests for simulation.html gait changes.
  *
- * These tests are written BEFORE the implementation changes and must:
- *   - FAIL (red)  against the current  simulation.html values
- *   - PASS (green) after the planned changes are applied
- *
- * Changes under test:
+ * Round 1 changes (already implemented):
  *   1. STEP_L : 0.5  → 2.0
  *   2. BASE_X : 1.2  → 1.5
  *   3. Stride axis: dx on x-axis → dy on y-axis (x becomes constant)
- *   4. Per-leg yOff added: front=+0.75, mid=0, rear=-0.75
+ *   4. Per-leg yOff added to remove collisions
+ *
+ * Round 2 changes (collision fix — under test in T6, T11):
+ *   5. BASE_Y  : 1.0  → 1.5  (visual centering + IK margin)
+ *   6. yOff    : ±Y_LEN/4 (±0.75) → ±1.5 (LEG_FORE_AFT)
+ *      Derived: yOff_front must exceed STEP_L − |yLeg_mid| + 0.2 buffer = 1.45
+ *      Guarantees ≥0.25 world-y gap between adjacent leg corridors (all gaits).
  */
 
 'use strict';
@@ -29,7 +31,8 @@ const DUTY   = 0.5;
 const CURRENT = { STEP_L: 0.5,  BASE_X: 1.2, BASE_Y: 1.0, BASE_Z: 1.2 };
 
 // ── TARGET values (post-change) ───────────────────────────────────────────────
-const TARGET  = { STEP_L: 2.0,  BASE_X: 1.5, BASE_Y: 1.0, BASE_Z: 1.2 };
+const TARGET  = { STEP_L: 2.0,  BASE_X: 1.5, BASE_Y: 1.5, BASE_Z: 1.2 };
+const LEG_FORE_AFT = 1.5;  // yOff magnitude; must exceed STEP_L − |yLeg_mid| + 0.2 = 1.45
 
 // ── Leg tables ────────────────────────────────────────────────────────────────
 // Current: no yOff field
@@ -42,14 +45,15 @@ const LEGS_CURRENT = [
   { xLeg: -2.5,    yLeg: -Y_LEN/2,  side: -1, label: 'L-Rear'  },
 ];
 
-// Target: yOff added per plan
+// Target: yOff set to LEG_FORE_AFT (±1.5) to eliminate inter-leg collisions.
+// Corridors: front [0.0,+2.0], mid [-2.25,-0.25], rear [-4.5,-2.5] (≥0.25 gap each).
 const LEGS_TARGET = [
-  { xLeg: 0,    yLeg: 0,          yOff:  Y_LEN/4,  side:  1, label: 'R-Front' },
-  { xLeg: 0,    yLeg: -Y_LEN/4,  yOff:  0,          side:  1, label: 'R-Mid'   },
-  { xLeg: 0,    yLeg: -Y_LEN/2,  yOff: -Y_LEN/4,  side:  1, label: 'R-Rear'  },
-  { xLeg: -2.5, yLeg: 0,          yOff:  Y_LEN/4,  side: -1, label: 'L-Front' },
-  { xLeg: -2.5, yLeg: -Y_LEN/4,  yOff:  0,          side: -1, label: 'L-Mid'   },
-  { xLeg: -2.5, yLeg: -Y_LEN/2,  yOff: -Y_LEN/4,  side: -1, label: 'L-Rear'  },
+  { xLeg: 0,    yLeg: 0,          yOff:  LEG_FORE_AFT, side:  1, label: 'R-Front' },
+  { xLeg: 0,    yLeg: -Y_LEN/4,  yOff:  0,             side:  1, label: 'R-Mid'   },
+  { xLeg: 0,    yLeg: -Y_LEN/2,  yOff: -LEG_FORE_AFT, side:  1, label: 'R-Rear'  },
+  { xLeg: -2.5, yLeg: 0,          yOff:  LEG_FORE_AFT, side: -1, label: 'L-Front' },
+  { xLeg: -2.5, yLeg: -Y_LEN/4,  yOff:  0,             side: -1, label: 'L-Mid'   },
+  { xLeg: -2.5, yLeg: -Y_LEN/2,  yOff: -LEG_FORE_AFT, side: -1, label: 'L-Rear'  },
 ];
 
 // ── gaitTarget implementations ────────────────────────────────────────────────
@@ -189,14 +193,14 @@ test('T5  rear leg foot (idx 2) is further back than mid leg (idx 1) [new]', () 
     `rear y (${rearTarget.y.toFixed(3)}) should be < mid y (${midTarget.y.toFixed(3)})`);
 });
 
-// ── Test 6: Per-leg yOff values are correct (+0.75, 0, -0.75) ────────────────
-test('T6  per-leg yOff values: +0.75 / 0 / -0.75 [new]', () => {
-  approxEqual(LEGS_TARGET[0].yOff,  Y_LEN/4, 0.001, 'R-Front yOff');
-  approxEqual(LEGS_TARGET[1].yOff,  0,        0.001, 'R-Mid   yOff');
-  approxEqual(LEGS_TARGET[2].yOff, -Y_LEN/4, 0.001, 'R-Rear  yOff');
-  approxEqual(LEGS_TARGET[3].yOff,  Y_LEN/4, 0.001, 'L-Front yOff');
-  approxEqual(LEGS_TARGET[4].yOff,  0,        0.001, 'L-Mid   yOff');
-  approxEqual(LEGS_TARGET[5].yOff, -Y_LEN/4, 0.001, 'L-Rear  yOff');
+// ── Test 6: Per-leg yOff values are correct (±LEG_FORE_AFT=±1.5, 0) ──────────
+test('T6  per-leg yOff values: +1.5 / 0 / -1.5 [collision fix]', () => {
+  approxEqual(LEGS_TARGET[0].yOff,  LEG_FORE_AFT, 0.001, 'R-Front yOff');
+  approxEqual(LEGS_TARGET[1].yOff,  0,             0.001, 'R-Mid   yOff');
+  approxEqual(LEGS_TARGET[2].yOff, -LEG_FORE_AFT, 0.001, 'R-Rear  yOff');
+  approxEqual(LEGS_TARGET[3].yOff,  LEG_FORE_AFT, 0.001, 'L-Front yOff');
+  approxEqual(LEGS_TARGET[4].yOff,  0,             0.001, 'L-Mid   yOff');
+  approxEqual(LEGS_TARGET[5].yOff, -LEG_FORE_AFT, 0.001, 'L-Rear  yOff');
 });
 
 // ── Test 7: IK valid range — L ≤ 7.0 for all legs, all phases [new] ──────────
@@ -237,6 +241,45 @@ test('T9  BASE_X constant in target implementation is 1.5 [new]', () => {
 // ── Test 10: STEP_L is 2.0 (not 0.5) ─────────────────────────────────────────
 test('T10 STEP_L constant in target implementation is 2.0 [new]', () => {
   approxEqual(TARGET.STEP_L, 2.0, 0.001, 'STEP_L');
+});
+
+// ── Test 11: BASE_Y is 1.5 [collision fix] ───────────────────────────────────
+test('T11 BASE_Y is 1.5 [collision fix]', () => {
+  approxEqual(TARGET.BASE_Y, 1.5, 0.001, 'BASE_Y');
+});
+
+// ── Test 12: World-y corridors are non-overlapping with ≥0.2 buffer ──────────
+// world_y = (BASE_Y + yOff + dy) + Y_OFF + yLeg  where dy ∈ [−STEP_L/2, +STEP_L/2]
+// corridor_min = BASE_Y + yOff − STEP_L/2 + Y_OFF + yLeg
+// corridor_max = BASE_Y + yOff + STEP_L/2 + Y_OFF + yLeg
+test('T12 world-y corridors non-overlapping ≥0.2 buffer between adjacent legs [collision fix]', () => {
+  const BUFFER = 0.2;
+  const corridor = (legIdx) => {
+    const { yOff, yLeg } = LEGS_TARGET[legIdx];
+    return {
+      min: TARGET.BASE_Y + yOff - TARGET.STEP_L/2 + Y_OFF + yLeg,
+      max: TARGET.BASE_Y + yOff + TARGET.STEP_L/2 + Y_OFF + yLeg,
+    };
+  };
+  // Right side: indices 0 (front), 1 (mid), 2 (rear)
+  const rFront = corridor(0);
+  const rMid   = corridor(1);
+  const rRear  = corridor(2);
+  assert.ok(rFront.min >= rMid.max + BUFFER,
+    `R: front min (${rFront.min.toFixed(3)}) must be ≥ mid max (${rMid.max.toFixed(3)}) + ${BUFFER}`);
+  assert.ok(rMid.min >= rRear.max + BUFFER,
+    `R: mid  min (${rMid.min.toFixed(3)}) must be ≥ rear max (${rRear.max.toFixed(3)}) + ${BUFFER}`);
+  // Left side: indices 3 (front), 4 (mid), 5 (rear) — same yOff/yLeg values, symmetric
+  const lFront = corridor(3);
+  const lMid   = corridor(4);
+  const lRear  = corridor(5);
+  assert.ok(lFront.min >= lMid.max + BUFFER,
+    `L: front min (${lFront.min.toFixed(3)}) must be ≥ mid max (${lMid.max.toFixed(3)}) + ${BUFFER}`);
+  assert.ok(lMid.min >= lRear.max + BUFFER,
+    `L: mid  min (${lMid.min.toFixed(3)}) must be ≥ rear max (${lRear.max.toFixed(3)}) + ${BUFFER}`);
+  // Report actual buffers
+  console.log(`       R-Front/Mid buffer: ${(rFront.min - rMid.max).toFixed(3)}`);
+  console.log(`       R-Mid/Rear  buffer: ${(rMid.min  - rRear.max).toFixed(3)}`);
 });
 
 // ── Summary ───────────────────────────────────────────────────────────────────
