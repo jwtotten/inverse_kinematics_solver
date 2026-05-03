@@ -24,17 +24,50 @@ constexpr float Z_OFF_BASE      = -6.0f;
 constexpr float BODY_X_LEN      = 5.0f;
 constexpr float BODY_Y_LEN      = 3.0f;
 
+// ── Base foot-target offsets (cm, before IK mounting offsets) ────────────────
+// Mirror simulation.html BASE_X / BASE_Y / BASE_Z.
+//
+//   BASE_X — constant lateral extension of each foot from the hip attachment.
+//             xa = BASE_X + X_OFF_BASE = 1.5 + (−5) = −3.5  (right side)
+//   BASE_Y — fore/aft rest-position centre for all legs.
+//             Raised from 1.0 → 1.5 for better IK margin (collision fix).
+//   BASE_Z — nominal foot height above the ground plane.
+//             za = BASE_Z + Z_OFF_BASE = 1.2 + (−6) = −4.8 at ground,
+//             giving L_worst ≈ 6.65 < FEMUR+TIBIA = 7.0 ✓
+constexpr float BASE_X          = 1.5f;
+constexpr float BASE_Y          = 1.5f;
+constexpr float BASE_Z          = 1.2f;
+
+// ── Per-leg fore/aft rest stagger (cm) ───────────────────────────────────────
+// Mirrors simulation.html LEG_FORE_AFT = 1.5.
+// Front legs sit LEG_FORE_AFT ahead of mid; rear sit LEG_FORE_AFT behind.
+//
+// Collision-prevention derivation (tripod worst case, STEP_L = 2):
+//   Required:  LEG_FORE_AFT > STEP_L/2 + |yLeg_mid| + 0.2 buffer
+//              1.5           > 1.0      + 0           + 0.2   ✓
+constexpr float LEG_FORE_AFT    = 1.5f;
+
 // ── Leg body-attachment positions (cm from body origin) ──────────────────────
-// Derived from IkSolver.__init__ instance-number formula.
-// Right side (legs 0-2): x=0,  y = 0 / -0.75 / -1.5
-// Left  side (legs 3-5): x=-2.5, y = 0 / -0.75 / -1.5
-constexpr float LEG_X_BODY[6]   = { 0.0f,  0.0f,  0.0f, -2.5f, -2.5f, -2.5f };
-constexpr float LEG_Y_BODY[6]   = { 0.0f, -0.75f, -1.5f, 0.0f, -0.75f, -1.5f };
+// x_body — constant lateral position fed to IK (no stride in x).
+//           Right side: +BASE_X  → xa = BASE_X + X_OFF_BASE = −3.5
+//           Left  side: −BASE_X  → xa = −BASE_X − X_OFF_BASE = +3.5
+//
+// y_body — fore/aft rest centre fed to IK; gait_fwd() is added each tick.
+//           Derived as  BASE_Y + yOff  for right legs (and negated for left):
+//             Front (yOff = +LEG_FORE_AFT): y_body =  BASE_Y + 1.5 =  3.0
+//             Mid   (yOff =  0)           : y_body =  BASE_Y + 0   =  1.5
+//             Rear  (yOff = −LEG_FORE_AFT): y_body =  BASE_Y − 1.5 =  0.0
+//           Left side values are the negatives of the right side.
+constexpr float LEG_X_BODY[6]  = {  1.5f,  1.5f,  1.5f, -1.5f, -1.5f, -1.5f };
+constexpr float LEG_Y_BODY[6]  = {  3.0f,  1.5f,  0.0f, -3.0f, -1.5f,  0.0f };
 
 // ── Gait defaults ────────────────────────────────────────────────────────────
-// Matches GaitController defaults: step_height=2.0, step_length=4.0, duty=0.5
+// STEP_HEIGHT — swing arc height (cm); matches simulation STEP_H = 2.0.
+// STEP_LENGTH — total fore/aft stride range (cm); mirrors simulation STEP_L = 2.0.
+//               gait_fwd() sweeps ±STEP_LENGTH/2 = ±1.0 cm per cycle.
+//               Worst-case IK reach (R-Rear at −1.0): L ≈ 6.65 < 7.0 ✓
 constexpr float STEP_HEIGHT     = 2.0f;
-constexpr float STEP_LENGTH     = 4.0f;
+constexpr float STEP_LENGTH     = 2.0f;
 constexpr float DUTY_FACTOR     = 0.5f;
 
 // ── Control loop ─────────────────────────────────────────────────────────────

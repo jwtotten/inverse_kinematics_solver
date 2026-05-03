@@ -103,24 +103,35 @@
 
     // ── Gait parameters (matching Scripts/gait_controller.py) ────────────
     const STEP_H  = 2.0;
-    const STEP_L  = 0.5;   // tuned so IK stays in valid range with these offsets
+    const STEP_L  = 2.0;   // max safe stride: L peaks at ~6.55 < FEMUR+TIBIA=7.0
     const DUTY    = 0.5;
 
     // ── Working base target (verified analytically for FEMUR=TIBIA=3.5) ──
     // After offsets (x+X_OFF, y+Y_OFF, z+Z_OFF) must give L ≤ FEMUR+TIBIA=7
-    const BASE_X  = 1.2;
-    const BASE_Y  = 1.0;
+    // Valid STEP_L range: up to ~2.4; BASE_X=1.5 centres the stride comfortably.
+    const BASE_X  = 1.5;
+    const BASE_Y  = 1.5;   // raised to improve visual foot placement and IK margin
     const BASE_Z  = 1.2;
 
     // ── Leg table (instance order matches Python __new__ ordering) ────────
     // side: +1 = right (legs 0-2), -1 = left (legs 3-5, coords/offsets negated)
+    // LEG_FORE_AFT: fore/aft yOff magnitude for front/rear legs.
+    // Derivation (non-overlapping world-y corridors, buffer B=0.2):
+    //   yOff_front > STEP_L − |yLeg_mid| + B = 2.0 − 0.75 + 0.2 = 1.45
+    // Using 1.5 gives a 0.25-unit world-y gap between every adjacent leg pair,
+    // eliminating collisions in all gait patterns (tripod is worst case).
+    // IK validity: worst-case L ≈ 6.65 < FEMUR+TIBIA=7.0 ✓
+    const LEG_FORE_AFT = 1.5;
+
+    // yOff staggers foot rest positions fore/aft so the hexapod forms a
+    // symmetric fan pattern from above: front feet forward, rear feet back.
     const LEGS = [
-      { xLeg: 0,         yLeg: 0,           side: 1,  label: 'R-Front'  },
-      { xLeg: 0,         yLeg: -Y_LEN/4,    side: 1,  label: 'R-Mid'    },
-      { xLeg: 0,         yLeg: -Y_LEN/2,    side: 1,  label: 'R-Rear'   },
-      { xLeg: -X_LEN/2,  yLeg: 0,           side: -1, label: 'L-Front'  },
-      { xLeg: -X_LEN/2,  yLeg: -Y_LEN/4,   side: -1, label: 'L-Mid'    },
-      { xLeg: -X_LEN/2,  yLeg: -Y_LEN/2,   side: -1, label: 'L-Rear'   },
+      { xLeg: 0,        yLeg: 0,          yOff:  LEG_FORE_AFT, side:  1, label: 'R-Front' },
+      { xLeg: 0,        yLeg: -Y_LEN/4,  yOff:  0,             side:  1, label: 'R-Mid'   },
+      { xLeg: 0,        yLeg: -Y_LEN/2,  yOff: -LEG_FORE_AFT, side:  1, label: 'R-Rear'  },
+      { xLeg: -X_LEN/2, yLeg: 0,          yOff:  LEG_FORE_AFT, side: -1, label: 'L-Front' },
+      { xLeg: -X_LEN/2, yLeg: -Y_LEN/4,  yOff:  0,             side: -1, label: 'L-Mid'   },
+      { xLeg: -X_LEN/2, yLeg: -Y_LEN/2,  yOff: -LEG_FORE_AFT, side: -1, label: 'L-Rear'  },
     ];
 
     const LEG_COLORS = ['#58a6ff','#3fb950','#ffa657','#d2a8ff','#ff7b72','#79c0ff'];
@@ -134,22 +145,26 @@
     }
 
     // ── Gait trajectory at normalised time t ∈ [0,1) ────────────────────
+    // Stride is along the y-axis (body length / walking direction).
+    // x is held constant (outward leg extension).
+    // Per-leg yOff staggers the foot rest position fore/aft for hexapod symmetry.
     function gaitTarget(t, phase, legIdx) {
-      const p = (t + phase) % 1;
-      const s = LEGS[legIdx].side;
-      let dx, dz;
+      const p    = (t + phase) % 1;
+      const s    = LEGS[legIdx].side;
+      const yOff = LEGS[legIdx].yOff;
+      let dy, dz;
       if (p < DUTY) {
         const k = p / DUTY;                    // 0→1 during stance
-        dx = STEP_L * (0.5 - k);              // foot sweeps backward
+        dy = STEP_L * (0.5 - k);              // foot sweeps backward along body
         dz = 0;
       } else {
         const k = (p - DUTY) / (1 - DUTY);    // 0→1 during swing
-        dx = STEP_L * (k - 0.5);              // foot sweeps forward
+        dy = STEP_L * (k - 0.5);              // foot swings forward along body
         dz = STEP_H * Math.sin(k * Math.PI);  // arc upward
       }
       return {
-        x: (BASE_X + dx) * s,
-        y:  BASE_Y * s,
+        x:  BASE_X * s,                        // constant outward extension
+        y: (BASE_Y + yOff + dy) * s,           // fore/aft sweep + leg offset
         z:  BASE_Z + dz,
       };
     }
