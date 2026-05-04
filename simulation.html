@@ -71,6 +71,14 @@
       </select>
     </div>
     <div class="ctrl">
+      <label>Direction</label>
+      <select id="direction">
+        <option value="1">Forward</option>
+        <option value="0">Stop</option>
+        <option value="-1">Backward</option>
+      </select>
+    </div>
+    <div class="ctrl">
       <label>Speed</label>
       <input type="range" id="speed" min="0.2" max="3" step="0.1" value="1">
     </div>
@@ -148,18 +156,18 @@
     // Stride is along the y-axis (body length / walking direction).
     // x is held constant (outward leg extension).
     // Per-leg yOff staggers the foot rest position fore/aft for hexapod symmetry.
-    function gaitTarget(t, phase, legIdx) {
+    function gaitTarget(t, phase, legIdx, stepL = STEP_L) {
       const p    = (t + phase) % 1;
       const s    = LEGS[legIdx].side;
       const yOff = LEGS[legIdx].yOff;
       let dy, dz;
       if (p < DUTY) {
         const k = p / DUTY;                    // 0→1 during stance
-        dy = STEP_L * (0.5 - k);              // foot sweeps backward along body
+        dy = stepL * (0.5 - k);               // foot sweeps backward along body
         dz = 0;
       } else {
         const k = (p - DUTY) / (1 - DUTY);    // 0→1 during swing
-        dy = STEP_L * (k - 0.5);              // foot swings forward along body
+        dy = stepL * (k - 0.5);               // foot swings forward along body
         dz = STEP_H * Math.sin(k * Math.PI);  // arc upward
       }
       return {
@@ -253,9 +261,11 @@
 
     function drawFrame() {
       const gait  = document.getElementById('gait').value;
+      const dir   = parseFloat(document.getElementById('direction').value);
       const speed = parseFloat(document.getElementById('speed').value);
       const az    = parseFloat(document.getElementById('azimuth').value);
       const el    = parseFloat(document.getElementById('elevation').value);
+      const effectiveStepL = STEP_L * dir;
       const scale = 32;
       const cx    = canvas.width  / 2 + 40;
       const cy    = canvas.height / 2 - 60;
@@ -308,7 +318,7 @@
       // ── Legs ──────────────────────────────────────────────────────────
       LEGS.forEach((leg, i) => {
         const phase  = phaseFor(i, gait);
-        const target = gaitTarget(t, phase, i);
+        const target = gaitTarget(t, phase, i, effectiveStepL);
         const p      = (t + phase) % 1;
         const isSwing = p >= DUTY;
 
@@ -365,7 +375,7 @@
       ctx.fillText(`t = ${t.toFixed(3)}   gait = ${gait.toUpperCase()}   speed = ${speed.toFixed(1)}×`, 16, 20);
       ctx.fillText(`FEMUR = ${FEMUR}  TIBIA = ${TIBIA}  step_h = ${STEP_H}  step_l = ${STEP_L}`, 16, 36);
 
-      t = (t + 0.003 * speed) % 1;
+      if (dir !== 0) t = (t + 0.003 * speed) % 1;
       requestAnimationFrame(drawFrame);
     }
 
