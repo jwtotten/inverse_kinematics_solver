@@ -3,99 +3,460 @@
 <head>
   <meta charset="utf-8">
   <title>Hexapod IK Simulation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    /* ── Reset & tokens ────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #060b18;
+      --surface:   #0f1629;
+      --surface2:  #111d35;
+      --border:    #1e2d47;
+      --border2:   #2a3f60;
+      --accent:    #00d4ff;
+      --accent-dim:#00d4ff33;
+      --accent2:   #7c3aed;
+      --text:      #e2e8f0;
+      --muted:     #64748b;
+      --muted2:    #94a3b8;
+      --swing:     #f87171;
+      --stance:    #34d399;
+      --glow:      0 0 20px #00d4ff22, 0 0 1px #00d4ff88;
+    }
+
+    /* ── Base ──────────────────────────────────────────────────────────── */
+    html { height: 100%; }
     body {
-      background: #0d1117;
-      color: #e6edf3;
-      font-family: 'Courier New', monospace;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      padding: 20px;
-      min-height: 100vh;
+      padding: 20px 24px 28px;
+      gap: 16px;
     }
-    h1 { color: #58a6ff; font-size: 1.1rem; margin-bottom: 14px; letter-spacing: 1px; }
-    canvas {
-      background: #161b22;
-      border: 1px solid #30363d;
-      border-radius: 8px;
-      display: block;
-    }
-    .controls {
-      margin-top: 14px;
+
+    /* ── Header ────────────────────────────────────────────────────────── */
+    header {
       display: flex;
-      gap: 20px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
       flex-wrap: wrap;
-      justify-content: center;
     }
-    .ctrl { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-    label { font-size: 0.72rem; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; }
-    select, input[type=range] {
-      background: #21262d;
-      border: 1px solid #30363d;
-      color: #e6edf3;
-      padding: 4px 8px;
-      border-radius: 4px;
+
+    .title-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+      box-shadow: var(--glow);
+    }
+
+    h1 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+
+    h1 span {
+      color: var(--accent);
+    }
+
+    /* ── HUD status strip ───────────────────────────────────────────────── */
+    #hud {
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      color: var(--muted2);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-variant-numeric: tabular-nums;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #hud .hud-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    #hud .hud-pill::before {
+      content: '';
+      display: inline-block;
+      width: 6px; height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 6px var(--accent);
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.35; }
+    }
+
+    /* ── Main layout ────────────────────────────────────────────────────── */
+    .app {
+      display: grid;
+      grid-template-columns: 1fr 272px;
+      gap: 16px;
+      flex: 1;
+      align-items: start;
+    }
+
+    /* ── Canvas wrapper ─────────────────────────────────────────────────── */
+    .canvas-wrap {
+      position: relative;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--border2);
+      box-shadow: var(--glow), 0 8px 40px #00000088;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #080e1f;
+    }
+
+    /* ── Sidebar ────────────────────────────────────────────────────────── */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* ── Cards ──────────────────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .card-title {
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Control rows ───────────────────────────────────────────────────── */
+    .ctrl-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .ctrl-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--muted2);
+      letter-spacing: 0.04em;
+    }
+
+    .ctrl-label .ctrl-val {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Select ─────────────────────────────────────────────────────────── */
+    select {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      padding: 8px 32px 8px 12px;
+      border-radius: 8px;
       font-family: inherit;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    select:hover { border-color: var(--accent); }
+    select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+    select option { background: #0d1526; }
+
+    /* ── Segment buttons (Direction) ────────────────────────────────────── */
+    .seg-group {
+      display: flex;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border2);
+    }
+
+    .seg {
+      flex: 1;
+      padding: 8px 4px;
+      background: var(--surface2);
+      border: none;
+      border-right: 1px solid var(--border2);
+      color: var(--muted2);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      letter-spacing: 0.02em;
+    }
+    .seg:last-child { border-right: none; }
+    .seg:hover:not(.active) { background: var(--border); color: var(--text); }
+
+    .seg.active {
+      background: var(--accent);
+      color: #020d1a;
+      font-weight: 600;
+    }
+    .seg.active-stop {
+      background: #fbbf24;
+      color: #020d1a;
+      font-weight: 600;
+    }
+    .seg.active-rev {
+      background: var(--accent2);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* ── Range sliders ──────────────────────────────────────────────────── */
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border2);
+      outline: none;
       cursor: pointer;
     }
-    input[type=range] { width: 130px; padding: 0; }
-    .legend {
-      margin-top: 12px;
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim), 0 0 8px var(--accent);
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 0 5px var(--accent-dim), 0 0 12px var(--accent);
+    }
+
+    input[type=range]::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border: none;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim), 0 0 8px var(--accent);
+      cursor: pointer;
+    }
+
+    input[type=range]::-moz-range-track {
+      height: 4px;
+      background: var(--border2);
+      border-radius: 2px;
+    }
+
+    /* ── Leg status list ────────────────────────────────────────────────── */
+    #legend {
       display: flex;
-      gap: 14px;
-      flex-wrap: wrap;
-      justify-content: center;
+      flex-direction: column;
+      gap: 7px;
     }
-    .leg-badge {
-      font-size: 0.72rem;
-      padding: 3px 8px;
-      border-radius: 10px;
-      border: 1px solid #30363d;
+
+    .leg-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--muted2);
     }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .leg-name {
+      flex: 1;
+      color: var(--text);
+    }
+
+    .phase-tag {
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 20px;
+      letter-spacing: 0.04em;
+      font-variant-numeric: tabular-nums;
+    }
+    .phase-tag.swing  { background: #f8717122; color: var(--swing); }
+    .phase-tag.stance { background: #34d39922; color: var(--stance); }
   </style>
 </head>
 <body>
-  <h1>HEXAPOD INVERSE KINEMATICS — LIVE SIMULATION</h1>
-  <canvas id="canvas" width="820" height="520"></canvas>
 
-  <div class="controls">
-    <div class="ctrl">
-      <label>Gait Pattern</label>
-      <select id="gait">
-        <option value="tripod">Tripod</option>
-        <option value="wave">Wave</option>
-        <option value="ripple">Ripple</option>
-      </select>
+  <!-- ── Header ─────────────────────────────────────────────────────────── -->
+  <header>
+    <div class="title-group">
+      <div class="logo">🦾</div>
+      <h1>Hexapod <span>IK</span> Simulation</h1>
     </div>
-    <div class="ctrl">
-      <label>Direction</label>
-      <select id="direction">
-        <option value="1">Forward</option>
-        <option value="0">Stop</option>
-        <option value="-1">Backward</option>
-      </select>
+    <div id="hud">
+      <span class="hud-pill" id="hudText">TRIPOD &nbsp;·&nbsp; t = 0.000 &nbsp;·&nbsp; 1.0× speed</span>
     </div>
-    <div class="ctrl">
-      <label>Speed</label>
-      <input type="range" id="speed" min="0.2" max="3" step="0.1" value="1">
-    </div>
-    <div class="ctrl">
-      <label>Azimuth</label>
-      <input type="range" id="azimuth" min="-180" max="180" step="1" value="35">
-    </div>
-    <div class="ctrl">
-      <label>Elevation</label>
-      <input type="range" id="elevation" min="5" max="80" step="1" value="28">
-    </div>
-  </div>
+  </header>
 
-  <div class="legend" id="legend"></div>
+  <!-- ── Main grid ──────────────────────────────────────────────────────── -->
+  <main class="app">
+
+    <!-- Canvas -->
+    <div class="canvas-wrap">
+      <canvas id="canvas" width="820" height="600"></canvas>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+
+      <!-- MOTION card -->
+      <div class="card">
+        <div class="card-title">Motion</div>
+
+        <div class="ctrl-row">
+          <div class="ctrl-label">Gait Pattern</div>
+          <select id="gait">
+            <option value="tripod">Tripod</option>
+            <option value="wave">Wave</option>
+            <option value="ripple">Ripple</option>
+          </select>
+        </div>
+
+        <div class="ctrl-row">
+          <div class="ctrl-label">Direction</div>
+          <div class="seg-group" id="dirGroup">
+            <button class="seg active"     data-val="1">Forward</button>
+            <button class="seg active-stop-inactive" data-val="0">Stop</button>
+            <button class="seg"            data-val="-1">Reverse</button>
+          </div>
+          <input type="hidden" id="direction" value="1">
+        </div>
+
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            Speed
+            <span class="ctrl-val" id="speedVal">1.0×</span>
+          </div>
+          <input type="range" id="speed" min="0.2" max="3" step="0.1" value="1">
+        </div>
+      </div>
+
+      <!-- CAMERA card -->
+      <div class="card">
+        <div class="card-title">Camera</div>
+
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            Azimuth
+            <span class="ctrl-val" id="azVal">35°</span>
+          </div>
+          <input type="range" id="azimuth" min="-180" max="180" step="1" value="35">
+        </div>
+
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            Elevation
+            <span class="ctrl-val" id="elVal">28°</span>
+          </div>
+          <input type="range" id="elevation" min="5" max="80" step="1" value="28">
+        </div>
+      </div>
+
+      <!-- LEG STATUS card -->
+      <div class="card">
+        <div class="card-title">Leg Status</div>
+        <div id="legend"></div>
+      </div>
+
+    </aside>
+  </main>
 
   <script>
   (() => {
+    // ── Direction segment buttons ────────────────────────────────────────
+    const dirInput  = document.getElementById('direction');
+    const dirGroup  = document.getElementById('dirGroup');
+    dirGroup.querySelectorAll('.seg').forEach(btn => {
+      btn.addEventListener('click', () => {
+        dirInput.value = btn.dataset.val;
+        dirGroup.querySelectorAll('.seg').forEach(b => {
+          b.classList.remove('active', 'active-stop', 'active-rev');
+        });
+        const v = parseFloat(btn.dataset.val);
+        btn.classList.add(v > 0 ? 'active' : v === 0 ? 'active-stop' : 'active-rev');
+      });
+    });
+
+    // ── Live label updates ────────────────────────────────────────────────
+    document.getElementById('speed').addEventListener('input', e => {
+      document.getElementById('speedVal').textContent = parseFloat(e.target.value).toFixed(1) + '×';
+    });
+    document.getElementById('azimuth').addEventListener('input', e => {
+      document.getElementById('azVal').textContent = e.target.value + '°';
+    });
+    document.getElementById('elevation').addEventListener('input', e => {
+      document.getElementById('elVal').textContent = e.target.value + '°';
+    });
+
+    // ── Canvas & context ──────────────────────────────────────────────────
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
@@ -142,7 +503,7 @@
       { xLeg: -X_LEN/2, yLeg: -Y_LEN/2,  yOff: -LEG_FORE_AFT, side: -1, label: 'L-Rear'  },
     ];
 
-    const LEG_COLORS = ['#58a6ff','#3fb950','#ffa657','#d2a8ff','#ff7b72','#79c0ff'];
+    const LEG_COLORS = ['#00d4ff','#3fb950','#ffa657','#d2a8ff','#ff7b72','#79c0ff'];
 
     // ── Phase offsets per gait pattern ───────────────────────────────────
     function phaseFor(legIdx, gait) {
@@ -244,16 +605,16 @@
       ctx.fill();
     }
 
-    // ── Build legend badges ───────────────────────────────────────────────
+    // ── Build legend rows ─────────────────────────────────────────────────
     const legendEl = document.getElementById('legend');
     LEGS.forEach((leg, i) => {
-      const badge = document.createElement('span');
-      badge.className = 'leg-badge';
-      badge.id = `badge-${i}`;
-      badge.style.color = LEG_COLORS[i];
-      badge.style.borderColor = LEG_COLORS[i] + '66';
-      badge.textContent = `Leg ${i+1} ${leg.label}`;
-      legendEl.appendChild(badge);
+      const row = document.createElement('div');
+      row.className = 'leg-row';
+      row.id = `badge-${i}`;
+      row.innerHTML = `<span class="dot" style="background:${LEG_COLORS[i]};box-shadow:0 0 6px ${LEG_COLORS[i]}"></span>
+                       <span class="leg-name">${leg.label}</span>
+                       <span class="phase-tag stance">→ stance</span>`;
+      legendEl.appendChild(row);
     });
 
     // ── Animation loop ────────────────────────────────────────────────────
@@ -266,28 +627,28 @@
       const az    = parseFloat(document.getElementById('azimuth').value);
       const el    = parseFloat(document.getElementById('elevation').value);
       const effectiveStepL = STEP_L * dir;
-      const scale = 32;
+      const scale = 34;
       const cx    = canvas.width  / 2 + 40;
-      const cy    = canvas.height / 2 - 60;
+      const cy    = canvas.height / 2 - 50;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       const proj = (x,y,z) => project3D(x, y, z, az, el, scale, cx, cy);
 
       // ── Ground grid ───────────────────────────────────────────────────
-      ctx.globalAlpha = 0.25;
+      ctx.globalAlpha = 0.18;
       const gRange = [-12, -8, -4, 0, 4, 8, 12];
       const gY = -9;
       gRange.forEach(gx => {
         const pa = proj(gx, gRange[0], gY);
         const pb = proj(gx, gRange[gRange.length-1], gY);
-        ctx.beginPath(); ctx.strokeStyle = '#30363d'; ctx.lineWidth = 0.5;
+        ctx.beginPath(); ctx.strokeStyle = '#1e2d47'; ctx.lineWidth = 0.8;
         ctx.moveTo(pa.sx, pa.sy); ctx.lineTo(pb.sx, pb.sy); ctx.stroke();
       });
       gRange.forEach(gz => {
         const pa = proj(gRange[0], gz, gY);
         const pb = proj(gRange[gRange.length-1], gz, gY);
-        ctx.beginPath(); ctx.strokeStyle = '#30363d'; ctx.lineWidth = 0.5;
+        ctx.beginPath(); ctx.strokeStyle = '#1e2d47'; ctx.lineWidth = 0.8;
         ctx.moveTo(pa.sx, pa.sy); ctx.lineTo(pb.sx, pb.sy); ctx.stroke();
       });
       ctx.globalAlpha = 1.0;
@@ -302,12 +663,12 @@
       ];
       const edges = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],
                      [0,4],[1,5],[2,6],[3,7]];
-      edges.forEach(([a,b]) => line3D(bc[a], bc[b], az, el, scale, cx, cy, '#3d8bcd', 1.5));
+      edges.forEach(([a,b]) => line3D(bc[a], bc[b], az, el, scale, cx, cy, '#1e4a7a', 1.5));
 
       // Body fill top face
-      ctx.globalAlpha = 0.08;
+      ctx.globalAlpha = 0.12;
       ctx.beginPath();
-      ctx.fillStyle = '#58a6ff';
+      ctx.fillStyle = '#00d4ff';
       [4,5,6,7,4].forEach((i,idx) => {
         const p = proj(...bc[i]);
         idx === 0 ? ctx.moveTo(p.sx, p.sy) : ctx.lineTo(p.sx, p.sy);
@@ -336,7 +697,7 @@
         const hip = [leg.xLeg, leg.yLeg, 0];
 
         const color  = LEG_COLORS[i];
-        const alpha  = isSwing ? 1.0 : 0.7;
+        const alpha  = isSwing ? 1.0 : 0.65;
         ctx.globalAlpha = alpha;
 
         // Coxa → femur → tibia
@@ -345,15 +706,15 @@
 
         // Joint dots
         dot3D(hip,      az, el, scale, cx, cy, color,   4);
-        dot3D(world[1], az, el, scale, cx, cy, '#e6edf3', 3);
-        dot3D(world[2], az, el, scale, cx, cy, isSwing ? '#f85149' : color, 4);
+        dot3D(world[1], az, el, scale, cx, cy, '#cbd5e1', 3);
+        dot3D(world[2], az, el, scale, cx, cy, isSwing ? '#f87171' : color, 4);
 
         ctx.globalAlpha = 1.0;
 
         // Foot shadow on ground
-        const footXY = proj(world[2][0], world[2][1], gY);
+        const footXY   = proj(world[2][0], world[2][1], gY);
         const bodyProj = proj(world[2][0], world[2][1], world[2][2]);
-        ctx.globalAlpha = 0.2;
+        ctx.globalAlpha = 0.18;
         ctx.beginPath();
         ctx.strokeStyle = color;
         ctx.lineWidth = 1;
@@ -364,16 +725,21 @@
         ctx.setLineDash([]);
         ctx.globalAlpha = 1.0;
 
-        // Update badge
+        // Update leg-status row
         const badge = document.getElementById(`badge-${i}`);
-        if (badge) badge.textContent = `Leg ${i+1} ${leg.label}: ${isSwing ? '↑swing' : '→stance'}`;
+        if (badge) {
+          badge.innerHTML = `<span class="dot" style="background:${color};box-shadow:0 0 6px ${color}"></span>
+                             <span class="leg-name">${leg.label}</span>
+                             <span class="phase-tag ${isSwing ? 'swing' : 'stance'}">${isSwing ? '↑ swing' : '→ stance'}</span>`;
+        }
       });
 
-      // ── HUD ───────────────────────────────────────────────────────────
-      ctx.fillStyle = '#8b949e';
-      ctx.font = '11px Courier New';
-      ctx.fillText(`t = ${t.toFixed(3)}   gait = ${gait.toUpperCase()}   speed = ${speed.toFixed(1)}×`, 16, 20);
-      ctx.fillText(`FEMUR = ${FEMUR}  TIBIA = ${TIBIA}  step_h = ${STEP_H}  step_l = ${STEP_L}`, 16, 36);
+      // ── DOM HUD ───────────────────────────────────────────────────────
+      const hudText = document.getElementById('hudText');
+      if (hudText) {
+        const dirLabel = dir > 0 ? 'FWD' : dir < 0 ? 'REV' : 'STOP';
+        hudText.textContent = `${gait.toUpperCase()}  ·  ${dirLabel}  ·  t = ${t.toFixed(3)}  ·  ${speed.toFixed(1)}× speed`;
+      }
 
       if (dir !== 0) t = (t + 0.003 * speed) % 1;
       requestAnimationFrame(drawFrame);
