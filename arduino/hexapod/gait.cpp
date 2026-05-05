@@ -1,31 +1,39 @@
 #include <math.h>
+#include "config.h"
 #include "gait.h"
 #include "ik.h"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // gait.cpp  —  Gait trajectory implementation
 //
-// Foot trajectory equations ported from GaitController in
-// Scripts/gait_controller.py.  Both functions are closed-form; no arrays.
+// Foot trajectory equations match simulation.html geometry.
+// Both functions are closed-form; no arrays are stored.
 //
-// Horizontal (replaces carry_leg_equation):
-//   stance (t < duty):  x = -step_len × (t / duty)         ← foot sweeps back
-//   swing  (t ≥ duty):  x =  step_len × ((t-duty)/(1-duty)) ← foot sweeps forward
+// Fore/aft (y axis — stride direction, mirrors simulation dy):
+//   stance (t < duty):  fwd =  step_len × (0.5 − t/duty)
+//                               → +step_len/2 (front) … −step_len/2 (rear)
+//   swing  (t ≥ duty):  fwd =  step_len × ((t−duty)/(1−duty) − 0.5)
+//                               → −step_len/2 … +step_len/2  (continuous!)
 //
-// Vertical (replaces lift_leg_equation):
+// Vertical (z axis — replaces lift_leg_equation):
 //   stance (t < duty):  z = 0
 //   swing  (t ≥ duty):  z = step_height × sin(((t-duty)/(1-duty)) × π)
+//
+// x axis is constant (= x_body) — no lateral stride component.
+// BASE_Z lifts the nominal foot height above ground (mirrors simulation BASE_Z).
 //
 // Sign of step_length controls direction: positive = forward, negative = reverse.
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── Internal helpers ─────────────────────────────────────────────────────────
 
-static float gait_x(float t, float step_len, float duty) {
+// gait_fwd: symmetric fore/aft sweep — continuous at both phase transitions.
+// Returns a value in [−step_len/2, +step_len/2].
+static float gait_fwd(float t, float step_len, float duty) {
     if (t < duty)
-        return -step_len * (t / duty);
+        return step_len * (0.5f - t / duty);
     else
-        return  step_len * ((t - duty) / (1.0f - duty));
+        return step_len * ((t - duty) / (1.0f - duty) - 0.5f);
 }
 
 static float gait_z(float t, float step_height, float duty) {
@@ -76,13 +84,14 @@ void gait_update(Leg legs[], uint8_t num_legs, const GaitConfig* cfg) {
 
         float t = legs[i].phase;
 
-        // ── Compute foot target in leg-local space ────────────────────────────
-        // x_body / y_body shift the target to the leg's attachment point on the
-        // body, mirroring the x_leg_position / y_leg_position offsets that
-        // IkSolver.solve_leg_position_from_target_coordinates() adds in Python.
-        float fx = gait_x(t, cfg->step_length, cfg->duty) + legs[i].x_body;
-        float fy = legs[i].y_body;   // lateral position fixed (no lateral gait)
-        float fz = gait_z(t, cfg->step_height, cfg->duty);
+        // ── Compute foot target ───────────────────────────────────────────────
+        // x_body: constant lateral extension — xa = x_body + x_off = BASE_X + X_OFF_BASE
+        // y_body: per-leg fore/aft rest centre (encodes BASE_Y + yOff stagger)
+        //         gait_fwd() sweeps ±STEP_LENGTH/2 around that rest centre.
+        // BASE_Z: nominal foot height above ground (added before IK z_off).
+        float fx = legs[i].x_body;
+        float fy = legs[i].y_body + gait_fwd(t, cfg->step_length, cfg->duty);
+        float fz = BASE_Z + gait_z(t, cfg->step_height, cfg->duty);
 
         // ── Solve IK — holds last valid angles on failure ─────────────────────
         ik_solve(&legs[i], fx, fy, fz);
