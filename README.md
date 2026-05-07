@@ -18,3 +18,7 @@ This can be done either with a preset rotation to start with or keystroke detect
 The multi-leg animation plot is currently able to animate all 6 legs concurrently. However, there is currently no input from the user to be able to specify whether or not the legs move in a forward or backwards direction.
 
 My goal going forwards is to be able to dynamically change the direction the legs of the robot take from the inputs described above, and allow the user to change the speed of movement and simulation of the robots legs.
+
+## Unittesting
+
+Unittesting has been implemented to further debug and validate the inverse kinematic solver solutions, as well as be able to verify the gait controlling can be successfully altered.

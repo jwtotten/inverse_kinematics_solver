@@ -131,9 +131,9 @@ class Plotter:
             joint_points_r.set_data(x, z)
             right_plot.set_data(x, z)
 
-            t_r_t.set_position((x[2], y[2]))
-            c_r_t.set_position((x[0], y[0]))
-            f_r_t.set_position((x[1], y[1]))
+            t_r_t.set_position((x[2], z[2]))
+            c_r_t.set_position((x[0], z[0]))
+            f_r_t.set_position((x[1], z[1]))
             
             return left_plot, right_plot
         

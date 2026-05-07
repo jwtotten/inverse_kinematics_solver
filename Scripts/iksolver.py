@@ -205,7 +205,7 @@ class IkSolver(object):
         return [x, y, z]
     
     @property
-    def offets(self) -> list:
+    def offsets(self) -> list:
         """
         This function returns the offsets of the coordinates for the solution.
 
@@ -214,7 +214,7 @@ class IkSolver(object):
 
         return [self.x_offset, self.y_offset, self.z_offset]
 
-    @offets.setter
+    @offsets.setter
     def offsets(self, x, y, z) -> None:
         """
         This function can set the offsets of the coordinates for the solution.
@@ -310,7 +310,7 @@ class IkSolver(object):
     
 if __name__ == "__main__":
     # Example usage
-    ik_solver = IkSolver(coxa_length=1.0, femur_length=1.0, tibia_length=1.0)
+    ik_solver = IkSolver(femur_length=1.0, tibia_length=1.0)
     x, y, z = 1.0, 1.0, 1.0
     angles = ik_solver.solve_inverse_kinematics(x, y, z)
     print(f"Inverse Kinematics Angles: {angles}")
