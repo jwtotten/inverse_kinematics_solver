@@ -1,6 +1,7 @@
 from matplotlib import pyplot as plt
 import matplotlib.animation as animation
 from typing import Union
+from Scripts.leg_collision_checker import get_crossing_leg_indices
 
 class Plotter:
 
@@ -232,13 +233,13 @@ class Plotter:
 
         def update_animated_plot(i):
 
-            # ToDo: Adjust this function to work with multiple legs
             if isinstance(ik_solver, list):
+                all_coords = []
                 for idx, leg in enumerate(ik_solver):
                     x_positions, y_positions, z_positions = leg.get_motion()
-                    coordinates = leg.solve_leg_position_from_target_coordinates(x_positions[i], 
-                                                                            y_positions[i], 
-                                                                            z_positions[i], 
+                    coordinates = leg.solve_leg_position_from_target_coordinates(x_positions[i],
+                                                                            y_positions[i],
+                                                                            z_positions[i],
                                                                             verbose=False)
                     # Extracting the coordinates from the forward kinematics result
                     x = [coordinates[0][0], coordinates[1][0], coordinates[2][0]]
@@ -247,8 +248,17 @@ class Plotter:
 
                     joint_plots[idx].set_data_3d(x, y, z)
                     leg_plots[idx].set_data_3d(x, y, z)
-                
-                return left_plot
+                    all_coords.append(coordinates)
+
+                # Collision detection — highlight crossing legs in red
+                crossing_indices = get_crossing_leg_indices(all_coords, threshold=0.05)
+                for idx in range(len(ik_solver)):
+                    colour = 'red' if idx in crossing_indices else 'blue'
+                    leg_plots[idx].set_color(colour)
+                if crossing_indices:
+                    print(f"Frame {i}: crossing legs {sorted(crossing_indices)}")
+
+                return leg_plots
             else:
                 x_positions, y_positions, z_positions = ik_solver.get_motion()
                 coordinates = ik_solver.solve_leg_position_from_target_coordinates(x_positions[i], 
