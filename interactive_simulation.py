@@ -78,17 +78,12 @@ def main():
     flat_z0 = [v for seg in zs0 for v in seg]
     ground_line, = ax.plot(flat_x0, flat_y0, flat_z0, 'k--', alpha=0.25, linewidth=0.5)
 
-    # --- Leg line artists ---
+    # --- Leg line artists (placeholder data; update() fills real positions on frame 0) ---
     joint_plots = []
     leg_plots = []
-    for gc in gait_controllers:
-        xp, yp, zp = gc.get_motion()
-        coords = gc.solve_leg_position_from_target_coordinates(xp[0], yp[0], zp[0], verbose=False)
-        jx = [c[0] for c in coords]
-        jy = [c[1] for c in coords]
-        jz = [c[2] for c in coords]
-        jp, = ax.plot(jx, jy, jz, 'ro', markersize=4)
-        lp, = ax.plot(jx, jy, jz, 'b-', linewidth=1.5)
+    for _ in gait_controllers:
+        jp, = ax.plot([0, 0, 0], [0, 0, 0], [0, 0, 0], 'ro', markersize=4)
+        lp, = ax.plot([0, 0, 0], [0, 0, 0], [0, 0, 0], 'b-', linewidth=1.5)
         joint_plots.append(jp)
         leg_plots.append(lp)
 
@@ -188,17 +183,22 @@ def main():
         all_coords = []
         for idx, gc in enumerate(gait_controllers):
             xp, yp, zp = gc.get_motion()
-            coords = gc.solve_leg_position_from_target_coordinates(xp[i], yp[i], zp[i], verbose=False)
+            try:
+                coords = gc.solve_leg_position_from_target_coordinates(xp[i], yp[i], zp[i], verbose=False)
+            except ValueError:
+                all_coords.append(None)
+                continue
             translated = translate_joints(coords, bo)
             jx = [c[0] for c in translated]
             jy = [c[1] for c in translated]
             jz = [c[2] for c in translated]
             joint_plots[idx].set_data_3d(jx, jy, jz)
             leg_plots[idx].set_data_3d(jx, jy, jz)
-            all_coords.append(coords)  # use untranslated for collision detection
+            all_coords.append(coords)
 
-        # Collision colours
-        crossing = get_crossing_leg_indices(all_coords, threshold=0.05)
+        # Collision colours (only check legs that solved successfully)
+        valid_coords = [c for c in all_coords if c is not None]
+        crossing = get_crossing_leg_indices(valid_coords, threshold=0.05) if valid_coords else set()
         for idx in range(6):
             leg_plots[idx].set_color('red' if idx in crossing else 'blue')
 
