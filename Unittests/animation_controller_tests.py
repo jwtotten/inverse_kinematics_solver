@@ -7,6 +7,7 @@ from Scripts.animation_controller import (
     build_ground_grid,
     apply_direction_to_controllers,
     apply_gait_to_controllers,
+    compute_phase_offsets,
 )
 from Scripts.gait_controller import GaitController, GaitPattern
 from Scripts.iksolver import IkSolver
@@ -75,6 +76,29 @@ class AnimationControllerTests(unittest.TestCase):
         flat_x = [x for seg in xs for x in seg if x is not None]
         self.assertGreaterEqual(min(flat_x), 5.0 - 0.001)
         self.assertLessEqual(max(flat_x), 15.0 + 0.001)
+
+    # compute_phase_offsets tests
+    def test_tripod_phase_offsets_alternate(self):
+        phases = compute_phase_offsets(GaitPattern.TRIPOD)
+        self.assertEqual(len(phases), 6)
+        self.assertAlmostEqual(phases[0], 0.0)
+        self.assertAlmostEqual(phases[1], 0.5)
+        self.assertAlmostEqual(phases[2], 0.0)
+        self.assertAlmostEqual(phases[3], 0.5)
+
+    def test_wave_phase_offsets_sequential(self):
+        phases = compute_phase_offsets(GaitPattern.WAVE)
+        self.assertEqual(len(phases), 6)
+        for i in range(6):
+            self.assertAlmostEqual(phases[i], (i / 6) % 1.0)
+
+    def test_ripple_phase_offsets(self):
+        phases = compute_phase_offsets(GaitPattern.RIPPLE)
+        self.assertEqual(len(phases), 6)
+        self.assertAlmostEqual(phases[0], 0.0)
+        self.assertAlmostEqual(phases[1], 0.25)
+        self.assertAlmostEqual(phases[2], 0.5)
+        self.assertAlmostEqual(phases[3], 0.75)
 
 
 class AnimationControllerIntegrationTests(unittest.TestCase):

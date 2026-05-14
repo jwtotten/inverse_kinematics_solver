@@ -74,3 +74,14 @@ def apply_gait_to_controllers(controllers: list, pattern) -> None:
     """Call gc.set_gait_pattern(pattern) on each controller."""
     for gc in controllers:
         gc.set_gait_pattern(pattern)
+
+
+def compute_phase_offsets(pattern, num_legs: int = 6) -> list:
+    """Return per-leg phase fractions [0.0, 1.0) for the given gait pattern."""
+    from Scripts.gait_controller import GaitPattern
+    if pattern == GaitPattern.TRIPOD:
+        return [0.0 if i % 2 == 0 else 0.5 for i in range(num_legs)]
+    elif pattern == GaitPattern.WAVE:
+        return [(i * (1.0 / num_legs)) % 1.0 for i in range(num_legs)]
+    else:  # RIPPLE
+        return [(i * 0.25) % 1.0 for i in range(num_legs)]
