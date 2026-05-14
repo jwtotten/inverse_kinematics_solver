@@ -31,11 +31,15 @@ python animated_simulation.py     # single-leg 2D animation
 python multi_leg_simulation.py    # all 6 legs, 3D animation with gait patterns
 ```
 
+**Browser simulation:** open `simulation.html` directly in a browser — no server required.
+
+**Arduino:** flash `arduino/hexapod/hexapod.ino` via the Arduino IDE with the Adafruit PWM Servo Driver library installed. Serial commands at 115200 baud: `S` (start), `X` (stop), `F`/`B` (forward/backward), `T`/`W`/`R` (tripod/wave/ripple), `+`/`-` (speed), `?` (status).
+
 ## Architecture
 
-The project solves inverse kinematics for a 6-legged (hexapod) robot, computing servo joint angles from target end-effector coordinates, and animates the results with matplotlib.
+This project has three parallel implementations of the same hexapod IK and gait algorithms: a **Python simulation** (desktop visualization + tests), an **Arduino firmware** (real hardware), and a **browser simulation** (Three.js). All share the same geometry and gait math.
 
-### Class hierarchy and data flow
+### Python — class hierarchy and data flow
 
 ```
 IkSolver  ──wraps──►  GaitController
@@ -74,3 +78,25 @@ via plot_animated_3d_projection(ik_solver)
 ### Tests (`Unittests/`)
 
 Tests use `unittest` and are discovered via `Unittests/__init__.py`. `setUpClass` is used in `GaitControllerTests` to create a single shared `IkSolver` instance across all test methods — this is intentional because `IkSolver` has a 6-instance limit. Tests use `@unittest.skipIf` flags to skip dependent tests when earlier ones fail.
+
+### Arduino firmware (`arduino/hexapod/`)
+
+The firmware is a C++ port of the Python IK and gait logic targeting an Arduino Uno R3.
+
+**Hardware:** 18× SG90/MG90S servos (3 per leg), driven by two PCA9685 I2C PWM boards (0x40, 0x41) at 50 Hz. External 5 V / 10 A PSU required — never power servos from the Uno's 5 V pin.
+
+**Key architectural difference from Python:** there are no pre-computed trajectory arrays (would cost ~3600 B of the Uno's 2 KB SRAM). Foot targets are computed analytically from the current phase on every tick. Memory budget: 6 `Leg` structs (264 B) + `GaitConfig` (20 B); servo channel map stored in PROGMEM (zero SRAM).
+
+**Module responsibilities:**
+- `types.h` — `Leg` and `GaitConfig` structs, `GaitPattern` constants
+- `ik.h/.cpp` — direct port of `solve_inverse_kinematics()`; returns `bool` for reachability instead of throwing
+- `gait.h/.cpp` — phase-based foot target computation, delegates to IK, advances phase each tick
+- `servo_driver.h/.cpp` — PCA9685 init + `angle_to_ticks()` (radians → 12-bit PWM); left-side legs (3–5) have `invert=true` in the servo map to compensate for mirror mounting
+- `serial_cmd.h/.cpp` — non-blocking single-character serial command parser
+- `config.h` — all constants; kept in sync with Python defaults for sim/firmware parity
+
+**Step length discrepancy:** Python `GaitController` defaults to `step_length = 4.0` cm; Arduino `config.h` uses `STEP_LENGTH = 2.0` cm. This is a known divergence and has not been harmonised.
+
+### Browser simulation (`simulation.html`)
+
+Self-contained Three.js 3D visualisation — no build step, no server. Re-implements the same IK and gait math in JavaScript. Key constants: `LEG_FORE_AFT = 1.5` cm fore/aft separation (increased from 0.75 to prevent tripod inter-leg collisions in the worst-case 180° out-of-phase configuration), `BASE_Y = 1.5` cm lateral offset.
