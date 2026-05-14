@@ -71,12 +71,13 @@ def main():
         line, = ax.plot(bx, by, bz, c='green', linewidth=1.5)
         body_lines.append((line, bx, by, bz))
 
-    # --- Ground grid (single line artist, data updated each frame) ---
+    # --- Ground grid (None → NaN for matplotlib 3D line-break support) ---
+    def _flatten_grid(segs):
+        return [float('nan') if v is None else v for seg in segs for v in seg]
+
     xs0, ys0, zs0 = build_ground_grid(0.0)
-    flat_x0 = [v for seg in xs0 for v in seg]
-    flat_y0 = [v for seg in ys0 for v in seg]
-    flat_z0 = [v for seg in zs0 for v in seg]
-    ground_line, = ax.plot(flat_x0, flat_y0, flat_z0, 'k--', alpha=0.25, linewidth=0.5)
+    ground_line, = ax.plot(_flatten_grid(xs0), _flatten_grid(ys0), _flatten_grid(zs0),
+                           'k--', alpha=0.25, linewidth=0.5)
 
     # --- Leg line artists (placeholder data; update() fills real positions on frame 0) ---
     joint_plots = []
@@ -224,10 +225,7 @@ def main():
 
         # Update ground grid
         xs, ys, zs = build_ground_grid(bo)
-        flat_x = [v for seg in xs for v in seg]
-        flat_y = [v for seg in ys for v in seg]
-        flat_z = [v for seg in zs for v in seg]
-        ground_line.set_data_3d(flat_x, flat_y, flat_z)
+        ground_line.set_data_3d(_flatten_grid(xs), _flatten_grid(ys), _flatten_grid(zs))
 
         # Camera follows body
         ax.set_xlim([bo - XLIM_HALF, bo + XLIM_HALF])
