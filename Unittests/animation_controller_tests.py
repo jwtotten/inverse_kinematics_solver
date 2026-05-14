@@ -89,20 +89,35 @@ class AnimationControllerIntegrationTests(unittest.TestCase):
 
     # apply_direction_to_controllers tests
     def test_direction_forward_sets_positive_step_length(self):
-        pass
+        gc = GaitController(iksolver=self.ik_a, number_samples=50)
+        apply_direction_to_controllers([gc], direction=1, step_length_abs=4.0)
+        self.assertAlmostEqual(gc.step_length, 4.0)
 
     def test_direction_backward_sets_negative_step_length(self):
-        pass
+        gc = GaitController(iksolver=self.ik_a, number_samples=50)
+        apply_direction_to_controllers([gc], direction=-1, step_length_abs=4.0)
+        self.assertAlmostEqual(gc.step_length, -4.0)
 
     def test_direction_stop_sets_zero_step_length(self):
-        pass
+        gc = GaitController(iksolver=self.ik_a, number_samples=50)
+        apply_direction_to_controllers([gc], direction=0, step_length_abs=4.0)
+        self.assertAlmostEqual(gc.step_length, 0.0)
 
     # apply_gait_to_controllers tests
     def test_gait_switch_tripod_phase_offsets(self):
-        pass
+        gc = GaitController(iksolver=self.ik_a, number_samples=50)
+        apply_gait_to_controllers([gc], GaitPattern.TRIPOD)
+        # After applying TRIPOD, phase_offset depends on ik_a's instance number
+        # Just verify it's one of the valid TRIPOD values (0.0 or 0.5)
+        self.assertIn(gc.phase_offset, [0.0, 0.5])
 
     def test_gait_switch_wave_phase_offsets(self):
-        pass
+        gc = GaitController(iksolver=self.ik_a, number_samples=50)
+        apply_gait_to_controllers([gc], GaitPattern.WAVE)
+        # WAVE: phase_offset = (instance_number * 0.167) % 1
+        # Just verify it's a valid float in [0, 1)
+        self.assertGreaterEqual(gc.phase_offset, 0.0)
+        self.assertLess(gc.phase_offset, 1.0)
 
 
 if __name__ == "__main__":

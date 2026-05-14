@@ -52,9 +52,25 @@ def build_ground_grid(body_offset: float, spacing: float = 1.0, half_width: floa
     return xs, ys, zs
 
 
-def apply_direction_to_controllers(controllers: list, direction: int, step_length: float) -> None:
-    raise NotImplementedError
+def apply_direction_to_controllers(controllers: list, direction: int, step_length_abs: float) -> None:
+    """
+    Set step_length on each controller:
+    - direction=1:  step_length = +step_length_abs
+    - direction=-1: step_length = -step_length_abs
+    - direction=0:  step_length = 0.0
+    Then call gc._generate_gait_cycle() on each.
+    """
+    for gc in controllers:
+        if direction == 1:
+            gc.step_length = step_length_abs
+        elif direction == -1:
+            gc.step_length = -step_length_abs
+        else:
+            gc.step_length = 0.0
+        gc._generate_gait_cycle()
 
 
-def apply_gait_to_controllers(controllers: list, gait_pattern) -> None:
-    raise NotImplementedError
+def apply_gait_to_controllers(controllers: list, pattern) -> None:
+    """Call gc.set_gait_pattern(pattern) on each controller."""
+    for gc in controllers:
+        gc.set_gait_pattern(pattern)
