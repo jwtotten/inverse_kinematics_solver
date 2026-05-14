@@ -82,10 +82,11 @@ class AnimationControllerIntegrationTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # Use pre-existing IkSolver instances if available, or create new ones
-        # IkSolver has a 6-instance limit — these tests use 2 instances max
         cls.ik_a = IkSolver(femur_length=3.5, tibia_length=3.5)
-        cls.ik_b = IkSolver(femur_length=3.5, tibia_length=3.5)
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.ik_a
 
     # apply_direction_to_controllers tests
     def test_direction_forward_sets_positive_step_length(self):
