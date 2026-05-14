@@ -2,30 +2,29 @@
 Interactive hexapod simulation.
 Controls: F/B/S=direction  T/W/R=gait  +/-=speed
 """
+import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib.widgets import RadioButtons, Button, Slider
 from Scripts.iksolver import IkSolver
-from Scripts.gait_controller import GaitController, GaitPattern
+from Scripts.gait_controller import GaitPattern
 from Scripts.leg_collision_checker import get_crossing_leg_indices
 from Scripts.animation_controller import (
     advance_frame, compute_body_offset, clamp_speed,
     translate_joints, build_ground_grid,
-    apply_direction_to_controllers, apply_gait_to_controllers,
+    compute_phase_offsets,
 )
 
-NUM_SAMPLES = 50
-STEP_LENGTH_ABS = 4.0
+NUM_SAMPLES = 20
+STEP_LENGTH_ABS = 0.6
 INITIAL_SPEED = 1.0
 XLIM_HALF = 12.0
 
 
 def main():
-    # --- Setup IK solvers and gait controllers ---
+    # --- Setup IK solvers ---
     ik_solvers = [IkSolver(femur_length=3.5, tibia_length=3.5) for _ in range(6)]
-    gait_controllers = [GaitController(iksolver=ik, number_samples=NUM_SAMPLES) for ik in ik_solvers]
-    for gc in gait_controllers:
-        gc.set_gait_pattern(GaitPattern.TRIPOD)
+    base_trajectories = [ik.get_motion() for ik in ik_solvers]
 
     # --- Mutable state (use dict to allow closure mutation) ---
     state = {
@@ -34,6 +33,7 @@ def main():
         'speed': INITIAL_SPEED,
         'frame_counter': 0.0,
         'gait': GaitPattern.TRIPOD,
+        'phase_offsets': compute_phase_offsets(GaitPattern.TRIPOD),
     }
 
     # --- Figure layout ---
@@ -81,7 +81,7 @@ def main():
     # --- Leg line artists (placeholder data; update() fills real positions on frame 0) ---
     joint_plots = []
     leg_plots = []
-    for _ in gait_controllers:
+    for _ in ik_solvers:
         jp, = ax.plot([0, 0, 0], [0, 0, 0], [0, 0, 0], 'ro', markersize=4)
         lp, = ax.plot([0, 0, 0], [0, 0, 0], [0, 0, 0], 'b-', linewidth=1.5)
         joint_plots.append(jp)
@@ -112,11 +112,11 @@ def main():
     # --- Helpers ---
     def set_direction(d):
         state['direction'] = d
-        apply_direction_to_controllers(gait_controllers, d, STEP_LENGTH_ABS)
+        # no GaitController to update
 
     def set_gait(pattern):
         state['gait'] = pattern
-        apply_gait_to_controllers(gait_controllers, pattern)
+        state['phase_offsets'] = compute_phase_offsets(pattern)
 
     # --- Widget callbacks ---
     def on_radio(label):
@@ -181,13 +181,30 @@ def main():
 
         # Update leg artists
         all_coords = []
-        for idx, gc in enumerate(gait_controllers):
-            xp, yp, zp = gc.get_motion()
-            try:
-                coords = gc.solve_leg_position_from_target_coordinates(xp[i], yp[i], zp[i], verbose=False)
-            except ValueError:
-                all_coords.append(None)
-                continue
+        for idx, ik in enumerate(ik_solvers):
+            x_arr, y_arr, z_arr = base_trajectories[idx]
+            x_arr = np.array(x_arr)
+            y_arr = np.array(y_arr)
+            z_arr = np.array(z_arr)
+
+            # Apply direction to x trajectory
+            x_home = x_arr[0]  # stance position (first element = home x)
+            if state['direction'] == -1:
+                x_arr_eff = 2 * x_home - x_arr  # mirror x around home
+            elif state['direction'] == 0:
+                x_arr_eff = np.full_like(x_arr, x_home)  # hold at home
+            else:
+                x_arr_eff = x_arr
+
+            # Apply phase offset for gait pattern
+            phase_shift = int(NUM_SAMPLES * state['phase_offsets'][idx])
+            x_rolled = np.roll(x_arr_eff, phase_shift)
+            y_rolled = np.roll(y_arr, phase_shift)
+            z_rolled = np.roll(z_arr, phase_shift)
+
+            xi, yi, zi = float(x_rolled[i]), float(y_rolled[i]), float(z_rolled[i])
+            coords = ik.solve_leg_position_from_target_coordinates(xi, yi, zi, verbose=False)
+
             translated = translate_joints(coords, bo)
             jx = [c[0] for c in translated]
             jy = [c[1] for c in translated]
@@ -196,9 +213,8 @@ def main():
             leg_plots[idx].set_data_3d(jx, jy, jz)
             all_coords.append(coords)
 
-        # Collision colours (only check legs that solved successfully)
-        valid_coords = [c for c in all_coords if c is not None]
-        crossing = get_crossing_leg_indices(valid_coords, threshold=0.05) if valid_coords else set()
+        # Collision colours
+        crossing = get_crossing_leg_indices(all_coords, threshold=0.05)
         for idx in range(6):
             leg_plots[idx].set_color('red' if idx in crossing else 'blue')
 
