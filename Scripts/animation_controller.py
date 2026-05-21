@@ -20,6 +20,11 @@ def translate_joints(joints: list, body_offset: float) -> list:
     return [[j[0] + body_offset, j[1], j[2]] for j in joints]
 
 
+def translate_joints_y(joints: list, y_offset: float) -> list:
+    """Add y_offset to y-coordinate (index 1) of each joint."""
+    return [[j[0], j[1] + y_offset, j[2]] for j in joints]
+
+
 def build_ground_grid(body_offset: float, spacing: float = 1.0, half_width: float = 12.0) -> tuple:
     """
     Returns (x_vals, y_vals, z_vals) for ground grid lines at z=0,

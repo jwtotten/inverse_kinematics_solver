@@ -4,6 +4,7 @@ from Scripts.animation_controller import (
     compute_body_offset,
     clamp_speed,
     translate_joints,
+    translate_joints_y,
     build_ground_grid,
     apply_direction_to_controllers,
     apply_gait_to_controllers,
@@ -63,6 +64,19 @@ class AnimationControllerTests(unittest.TestCase):
         joints = [[0.0, 2.0, 3.0]]
         result = translate_joints(joints, 5.0)
         self.assertAlmostEqual(result[0][1], 2.0)
+        self.assertAlmostEqual(result[0][2], 3.0)
+
+    # translate_joints_y tests
+    def test_translate_joints_y_shifts_y(self):
+        joints = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
+        result = translate_joints_y(joints, 10.0)
+        self.assertAlmostEqual(result[0][1], 12.0)
+        self.assertAlmostEqual(result[1][1], 15.0)
+
+    def test_translate_joints_y_preserves_x_z(self):
+        joints = [[1.0, 2.0, 3.0]]
+        result = translate_joints_y(joints, 5.0)
+        self.assertAlmostEqual(result[0][0], 1.0)
         self.assertAlmostEqual(result[0][2], 3.0)
 
     # build_ground_grid tests
