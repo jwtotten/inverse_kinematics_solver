@@ -11,14 +11,14 @@ from Scripts.gait_controller import GaitPattern
 from Scripts.leg_collision_checker import get_crossing_leg_indices
 from Scripts.animation_controller import (
     advance_frame, compute_body_offset, clamp_speed,
-    translate_joints, build_ground_grid,
+    translate_joints_y, build_ground_grid,
     compute_phase_offsets,
 )
 
 NUM_SAMPLES = 20
 STEP_LENGTH_ABS = 0.6
 INITIAL_SPEED = 1.0
-XLIM_HALF = 12.0
+VIEW_HALF = 12.0
 
 
 def main():
@@ -28,7 +28,7 @@ def main():
 
     # --- Mutable state (use dict to allow closure mutation) ---
     state = {
-        'body_offset': 0.0,
+        'body_y_offset': 0.0,
         'direction': 0,         # start stopped
         'speed': INITIAL_SPEED,
         'frame_counter': 0.0,
@@ -42,7 +42,7 @@ def main():
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
-    ax.set_ylim([-10, 10])
+    ax.set_xlim([-VIEW_HALF, VIEW_HALF])
     ax.set_zlim([-2, 8])
     ax.set_title('F/B/S: direction   T/W/R: gait   +/-: speed', fontsize=9)
 
@@ -175,10 +175,10 @@ def main():
     def update(frame):
         state['frame_counter'] = advance_frame(state['frame_counter'], state['speed'], NUM_SAMPLES)
         i = int(state['frame_counter'])
-        state['body_offset'] = compute_body_offset(
-            state['body_offset'], state['direction'], STEP_LENGTH_ABS, NUM_SAMPLES
+        state['body_y_offset'] = compute_body_offset(
+            state['body_y_offset'], -state['direction'], STEP_LENGTH_ABS, NUM_SAMPLES
         )
-        bo = state['body_offset']
+        bo = state['body_y_offset']
 
         # Update leg artists
         all_coords = []
@@ -206,7 +206,7 @@ def main():
             xi, yi, zi = float(x_rolled[i]), float(y_rolled[i]), float(z_rolled[i])
             coords = ik.solve_leg_position_from_target_coordinates(xi, yi, zi, verbose=False)
 
-            translated = translate_joints(coords, bo)
+            translated = translate_joints_y(coords, bo)
             jx = [c[0] for c in translated]
             jy = [c[1] for c in translated]
             jz = [c[2] for c in translated]
@@ -221,14 +221,14 @@ def main():
 
         # Update body box
         for (line, bx, by, bz) in body_lines:
-            line.set_data_3d([x + bo for x in bx], by, bz)
+            line.set_data_3d(bx, [y + bo for y in by], bz)
 
-        # Update ground grid
-        xs, ys, zs = build_ground_grid(bo)
-        ground_line.set_data_3d(_flatten_grid(xs), _flatten_grid(ys), _flatten_grid(zs))
+        # Update ground grid (Y-scrolling: swap roles so grid centers on Y offset)
+        ys_segs, xs_segs, zs = build_ground_grid(bo)
+        ground_line.set_data_3d(_flatten_grid(xs_segs), _flatten_grid(ys_segs), _flatten_grid(zs))
 
-        # Camera follows body
-        ax.set_xlim([bo - XLIM_HALF, bo + XLIM_HALF])
+        # Camera follows body along Y
+        ax.set_ylim([bo - VIEW_HALF, bo + VIEW_HALF])
 
         return leg_plots + joint_plots + [ground_line]
 
