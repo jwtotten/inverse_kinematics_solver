@@ -5,15 +5,14 @@ Copy this file to the Pi. Install deps:
     pip install adafruit-circuitpython-pca9685 adafruit-blinka numpy
 
 Wiring:
-    Right PCA9685 at I2C 0x41 (A0 jumper set) — legs 0-2
+    Right PCA9685 at I2C 0x40 — I2C bus 1, SDA/SCL pins 3/5 — legs 0-2
         Leg 0: channels 0 (coxa), 1 (femur), 2 (tibia)
         Leg 1: channels 3 (coxa), 4 (femur), 5 (tibia)
         Leg 2: channels 6 (coxa), 7 (femur), 8 (tibia)
-    Left PCA9685 at I2C 0x40 (factory default) — legs 3-5
+    Left PCA9685 at I2C 0x41 — I2C bus 1, daisy-chained, A0 jumper bridged — legs 3-5
         Leg 3: channels 0 (coxa), 1 (femur), 2 (tibia)
         Leg 4: channels 3 (coxa), 4 (femur), 5 (tibia)
         Leg 5: channels 6 (coxa), 7 (femur), 8 (tibia)
-    Both boards share SDA/SCL (pins 3/5 on Pi)
 
 Run:        python leg_controller.py
 Calibrate:  python leg_controller.py --calibrate
@@ -29,8 +28,8 @@ import numpy as np
 CYCLE_FREQ = 1.0    # Hz — full gait cycles per second
 
 # I2C addresses for both PCA9685 boards
-PCA_RIGHT_ADDR = 0x41   # right board — A0 jumper set
-PCA_LEFT_ADDR  = 0x40   # left board  — factory default, no jumpers
+PCA_RIGHT_ADDR = 0x40   # right board — I2C bus 1 (pins 3/5), no jumpers
+PCA_LEFT_ADDR  = 0x41   # left board  — I2C bus 1, A0 jumper bridged
 
 # Per-leg configuration. All lists must stay the same length.
 # To add legs: append one entry to each list simultaneously.
@@ -334,3 +333,4 @@ if __name__ == '__main__':
     finally:
         pca_right.deinit()
         pca_left.deinit()
+        i2c.deinit()
